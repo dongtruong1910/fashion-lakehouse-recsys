@@ -1,0 +1,35 @@
+# configs/spark_config.yaml — Cấu hình tối ưu PySpark + Delta Lake cho Laptop 24GB RAM (WSL2 16GB)
+app_name: "FashionLakehouseRecSys"
+master: "local[*]"
+
+# Bộ nhớ cấp cho Spark Driver khi chạy Batch ETL (Không vượt quá 10g để chừa RAM cho OS & Docker)
+driver_memory: "8g"
+executor_memory: "8g"
+max_result_size: "2g"
+
+# Các gói Maven bắt buộc cho Delta Lake 3.2.1 và Kafka Structured Streaming (Spark 3.5.3)
+jars_packages:
+  - "io.delta:delta-spark_2.12:3.2.1"
+  - "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3"
+
+spark_conf:
+  "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
+  "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+  "spark.sql.adaptive.enabled": "true"
+  "spark.sql.adaptive.coalescePartitions.enabled": "true"
+  "spark.sql.adaptive.skewJoin.enabled": "true"
+  "spark.sql.shuffle.partitions": "64"
+  "spark.default.parallelism": "16"
+  "spark.sql.parquet.compression.codec": "snappy"
+  "spark.sql.execution.arrow.pyspark.enabled": "true"
+  "spark.sql.session.timeZone": "UTC"
+  "spark.databricks.delta.retentionDurationCheck.enabled": "false"
+
+streaming:
+  kafka_bootstrap_servers: "localhost:9092"
+  topic: "fashion-events"
+  watermark_delay: "10 minutes"
+  window_duration: "15 minutes"
+  slide_duration: "1 minute"
+  trigger_processing_time: "10 seconds"
+  checkpoint_dir: "data/lakehouse/checkpoints/streaming"

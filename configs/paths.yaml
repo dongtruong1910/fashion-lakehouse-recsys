@@ -1,0 +1,54 @@
+# configs/paths.yaml — Đường dẫn dữ liệu tập trung cho toàn bộ hệ thống
+storage_backend: "local"  # "local" (mặc định trên NVMe/WSL2) hoặc "s3a" (khi test MinIO)
+
+raw:
+  hm_dir: "data/raw/hm"
+  articles_csv: "data/raw/hm/articles.csv"
+  customers_csv: "data/raw/hm/customers.csv"
+  transactions_csv: "data/raw/hm/transactions_train.csv"
+  images_dir: "data/raw/hm/images"
+  fashionpedia_dir: "data/raw/fashionpedia"
+  vn_eval_dir: "data/raw/vn_streetwear"
+
+splits:
+  hm_product_split: "data/splits/hm_split_v1.parquet"
+  temporal_validation:
+    val_start_date: "2020-09-16"
+    val_end_date: "2020-09-22"
+    val_week_num: 104
+    ranker_train_weeks: [101, 102, 103]
+
+lakehouse:
+  base_dir: "data/lakehouse"
+  bronze:
+    articles: "data/lakehouse/bronze/articles"
+    customers: "data/lakehouse/bronze/customers"
+    transactions: "data/lakehouse/bronze/transactions"
+    events_stream: "data/lakehouse/bronze/events_stream"
+  silver:
+    articles: "data/lakehouse/silver/articles"
+    customers: "data/lakehouse/silver/customers"
+    customer_mapping: "data/lakehouse/silver/customer_mapping"
+    transactions: "data/lakehouse/silver/transactions"
+  gold:
+    popularity_global: "data/lakehouse/gold/popularity_global"
+    popularity_age: "data/lakehouse/gold/popularity_age"
+    cooccurrence_all: "data/lakehouse/gold/cooccurrence_all"
+    cooccurrence_outfit: "data/lakehouse/gold/cooccurrence_outfit"
+    als_user_factors: "data/lakehouse/gold/als_user_factors"
+    als_item_factors: "data/lakehouse/gold/als_item_factors"
+    candidate_features: "data/lakehouse/gold/candidate_features"
+    item_features_latest: "data/lakehouse/gold/item_features_latest.parquet"
+    visual_embeddings: "data/lakehouse/gold/visual_embeddings.parquet"
+    twotower_item_embeddings: "data/lakehouse/gold/twotower_item_embeddings.parquet"
+
+models:
+  yolo_onnx: "models/yolo11m_fashion_fp16.onnx"
+  visual_encoder_onnx: "models/visual_encoder_fp16.onnx"
+  text_encoder_onnx: "models/text_encoder_fp16.onnx"
+  twotower_user_onnx: "models/two_tower_user.onnx"
+  lgbm_ranker: "models/lgbm_ranker.txt"
+
+reports:
+  tables_dir: "reports/tables"
+  figures_dir: "reports/figures"

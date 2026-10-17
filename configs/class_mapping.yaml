@@ -1,0 +1,119 @@
+# configs/class_mapping.yaml — Ánh xạ 46 lớp Fashionpedia -> 12 lớp Detector -> H&M product_type_name
+# Dùng chung cho: (1) Convert dataset Fashionpedia, (2) Filtered ANN Search trên Qdrant, (3) Đo CatConsistency@10
+
+detector_classes:
+  0: "top"
+  1: "outerwear"
+  2: "pants"
+  3: "shorts"
+  4: "skirt"
+  5: "dress"
+  6: "shoe"
+  7: "bag"
+  8: "hat"
+  9: "eyewear"
+  10: "scarf_tie"
+  11: "belt"
+
+# Ánh xạ từ tên lớp gốc của Fashionpedia (27 lớp chính) sang 12 lớp Detector
+# Các lớp bộ phận (collar, sleeve, pocket, zipper...) và lớp hiếm (watch, umbrella, sock, glove, tights) được loại bỏ.
+fashionpedia_to_detector:
+  "shirt, blouse": "top"
+  "top, t-shirt, sweatshirt": "top"
+  "sweater": "top"
+  "cardigan": "top"
+  "vest": "top"
+  "jacket": "outerwear"
+  "coat": "outerwear"
+  "cape": "outerwear"
+  "pants": "pants"
+  "shorts": "shorts"
+  "skirt": "skirt"
+  "dress": "dress"
+  "jumpsuit": "dress"
+  "shoe": "shoe"
+  "bag, wallet": "bag"
+  "hat": "hat"
+  "headband, head covering, hair accessory": "hat"
+  "glasses": "eyewear"
+  "scarf": "scarf_tie"
+  "tie": "scarf_tie"
+  "belt": "belt"
+
+# Ánh xạ từ 12 lớp Detector sang tập H&M product_type_name dùng để lọc Payload trên Qdrant
+detector_to_hm_product_types:
+  top:
+    - "T-shirt"
+    - "Top"
+    - "Vest top"
+    - "Shirt"
+    - "Blouse"
+    - "Sweater"
+    - "Cardigan"
+    - "Hoodie"
+    - "Polo shirt"
+    - "Bodysuit"
+  outerwear:
+    - "Jacket"
+    - "Coat"
+    - "Blazer"
+    - "Outdoor Waistcoat"
+  pants:
+    - "Trousers"
+    - "Leggings/Tights"
+    - "Outdoor trousers"
+  shorts:
+    - "Shorts"
+  skirt:
+    - "Skirt"
+  dress:
+    - "Dress"
+    - "Jumpsuit/Playsuit"
+    - "Dungarees"
+  shoe:
+    - "Sneakers"
+    - "Boots"
+    - "Sandals"
+    - "Ballerinas"
+    - "Pumps"
+    - "Slippers"
+    - "Heels"
+    - "Flat shoe"
+    - "Wedges"
+    - "Other shoe"
+    - "Flip flop"
+  bag:
+    - "Bag"
+    - "Backpack"
+    - "Cross-body bag"
+    - "Tote bag"
+    - "Weekend/Gym bag"
+    - "Shoulder bag"
+    - "Wallet"
+  hat:
+    - "Hat/beanie"
+    - "Cap/peaked"
+    - "Hat/brim"
+    - "Hair/alice band"
+    - "Beanie"
+    - "Straw hat"
+    - "Felt hat"
+    - "Bucket hat"
+  eyewear:
+    - "Sunglasses"
+  scarf_tie:
+    - "Scarf"
+    - "Tie"
+  belt:
+    - "Belt"
+
+# Quy tắc phối đồ khác nhóm (Complete the Look / Outfit Recommendation)
+outfit_complementary_groups:
+  top: ["pants", "shorts", "skirt", "outerwear", "shoe", "bag"]
+  outerwear: ["top", "pants", "dress", "shoe", "bag"]
+  pants: ["top", "outerwear", "shoe", "belt", "bag"]
+  shorts: ["top", "shoe", "hat", "eyewear"]
+  skirt: ["top", "outerwear", "shoe", "bag"]
+  dress: ["outerwear", "shoe", "bag", "hat", "eyewear"]
+  shoe: ["pants", "dress", "top", "skirt", "bag"]
+  bag: ["dress", "top", "outerwear", "pants", "shoe"]

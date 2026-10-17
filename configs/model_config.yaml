@@ -1,0 +1,96 @@
+# configs/model_config.yaml — Siêu tham số cho CV, RecSys Baselines, LightGBM và Two-Tower
+seed: 42
+
+cv:
+  # 3 ứng viên Zero-shot cho bước Benchmark ở WP-1 (TASK-CV-02)
+  zeroshot_candidates:
+    clip_b32:
+      provider: "transformers"
+      model_id: "openai/clip-vit-base-patch32"
+      embed_dim: 512
+      image_size: 224
+    siglip2_base:
+      provider: "transformers"
+      model_id: "google/siglip2-base-patch16-224"
+      embed_dim: 768
+      image_size: 224
+      multilingual: true
+    fashion_clip:
+      provider: "transformers"
+      model_id: "patrickjohncyh/fashion-clip"
+      embed_dim: 512
+      image_size: 224
+
+  active_encoder: "siglip2_base"
+  batch_size_inference: 128
+  use_fp16: true
+
+  # Cấu hình Fine-tune LoRA trên Colab L4 (Nếu vượt qua GATE-CV-1)
+  lora_finetune:
+    rank: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    learning_rate: 1.0e-4
+    batch_size: 256
+    epochs: 6
+    wise_ft_alphas: [0.3, 0.5, 0.7, 1.0]
+
+  # Cấu hình Detector trên Fashionpedia (12 lớp)
+  detector:
+    zeroshot_model: "yolov8s-worldv2.pt"
+    train_model: "yolo11m.pt"
+    smoke_test_model: "yolo11n.pt"
+    imgsz: 640
+    conf_threshold: 0.28
+    iou_threshold: 0.45
+    epochs_colab_l4: 60
+    batch_size_colab_l4: 32
+
+recsys:
+  eval_k: 12
+  candidate_pool_size: 100
+
+  # L0 & L1 Baselines
+  popularity_decay_lambda: 0.08
+  repurchase_max_items: 25
+  cooccurrence_max_basket_size: 30
+  cooccurrence_top_k_per_item: 20
+
+  # L2: Spark MLlib Implicit ALS
+  als:
+    lookback_weeks: 16
+    rank: 64
+    max_iter: 12
+    reg_param: 0.08
+    alpha: 20.0
+
+  # L3: Unified LightGBM LambdaRank (Chỉ train trên Active Users trong tuần nhãn)
+  lightgbm:
+    objective: "lambdarank"
+    metric: "ndcg"
+    ndcg_eval_at: [12]
+    boosting_type: "gbdt"
+    num_leaves: 63
+    learning_rate: 0.05
+    n_estimators: 600
+    early_stopping_rounds: 50
+    subsample_for_bin: 50000
+    colsample_bytree: 0.8
+    subsample: 0.8
+    random_state: 42
+    n_jobs: 8
+
+  # L4: Two-Tower Neural Retrieval (Đã tối ưu vừa khít 8GB VRAM của RTX 4060)
+  two_tower:
+    max_seq_len: 15          # Giữ 15 món gần nhất (thay vì 30) để không tràn VRAM
+    embed_dim: 64
+    num_heads: 2
+    dropout: 0.1
+    temperature: 0.05
+    batch_size: 512          # Vừa khít 8GB VRAM với AMP fp16
+    learning_rate: 1.0e-3
+    epochs: 5
+    freeze_visual_emb: true  # Nạp bảng vector ảnh dưới dạng nn.Embedding đóng băng (~162MB VRAM)
+
+  # Hệ số cá nhân hóa khi tìm kiếm bằng ảnh: score = sim_visual + beta * z_score(tt_score)
+  visual_search_personalization_beta: 0.15
