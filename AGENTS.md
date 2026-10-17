@@ -10,13 +10,13 @@
 Mỗi khi một Agent (hoặc phiên làm việc mới) được khởi tạo, bắt buộc phải đọc theo đúng thứ tự sau để nắm ngữ cảnh:
 
 1. **[`AGENTS.md`](AGENTS.md)** *(File hiện tại)*: Nắm vai trò, quy tắc bất khả xâm phạm và quy trình bàn giao.
-2. **[`docs/STATE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/STATE.md)**: Xem trạng thái hiện tại của dự án — Task nào đã xong, Task nào đang làm, các chỉ số thực nghiệm đã đo được và trạng thái các Decision Gates.
-3. **[`docs/HANDOFF.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/HANDOFF.md)**: Đọc bản ghi bàn giao gần nhất để biết Agent trước vừa làm gì, để lại file nào, có lưu ý hay lỗi tồn đọng gì.
-4. **[`docs/MASTER_PLAN.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/MASTER_PLAN.md)**: Xem chi tiết Work Package (`WP-xx`) và Task (`TASK-xx`) được giao, tiêu chí nghiệm thu (Acceptance Criteria) và điều kiện qua cổng (Decision Gate).
-5. **[`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md)**: Kiểm tra chính xác tên cột, kiểu dữ liệu, đường dẫn file, schema Qdrant/Redis/Kafka/FastAPI trước khi code.
-6. **[`docs/ARCHITECTURE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ARCHITECTURE.md)** & **[`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md)**: Hiểu thiết kế kiến trúc v3 và giới hạn tài nguyên phần cứng (Laptop RTX 4060 8GB VRAM, 24GB RAM $\leftrightarrow$ Colab Pro+ 200 CU).
+2. **[`docs/STATE.md`](docs/STATE.md)**: Xem trạng thái hiện tại của dự án — Task nào đã xong, Task nào đang làm, các chỉ số thực nghiệm đã đo được và trạng thái các Decision Gates.
+3. **[`docs/HANDOFF.md`](docs/HANDOFF.md)**: Đọc bản ghi bàn giao gần nhất để biết Agent trước vừa làm gì, để lại file nào, có lưu ý hay lỗi tồn đọng gì.
+4. **[`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md)**: Xem chi tiết Work Package (`WP-xx`) và Task (`TASK-xx`) được giao, tiêu chí nghiệm thu (Acceptance Criteria) và điều kiện qua cổng (Decision Gate).
+5. **[`docs/DATA_CONTRACTS.md`](docs/DATA_CONTRACTS.md)**: Kiểm tra chính xác tên cột, kiểu dữ liệu, đường dẫn file, schema Qdrant/Redis/Kafka/FastAPI trước khi code.
+6. **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** & **[`docs/INFRA_AND_COLAB_GUIDE.md`](docs/INFRA_AND_COLAB_GUIDE.md)**: Hiểu thiết kế kiến trúc v3 và giới hạn tài nguyên phần cứng (Laptop RTX 4060 8GB VRAM, 24GB RAM $\leftrightarrow$ Colab Pro+ 200 CU).
 
-> **Lưu ý:** Thư mục [`docs/ke_hoach_ban_dau/`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ke_hoach_ban_dau/) chỉ chứa lịch sử thảo luận ban đầu, **KHÔNG** dùng làm tài liệu đặc tả khi code.
+> **Lưu ý:** Thư mục [`docs/ke_hoach_ban_dau/`](docs/ke_hoach_ban_dau/) chỉ chứa lịch sử thảo luận ban đầu, **KHÔNG** dùng làm tài liệu đặc tả khi code.
 
 ---
 
@@ -30,7 +30,7 @@ Mỗi khi một Agent (hoặc phiên làm việc mới) được khởi tạo, b
 | **4. RecSys Modeling Sub-Agent** | Xây dựng các baseline (Popularity, Repurchase, Co-occurrence), Spark ALS, tính feature GPU (`features_gpu.py`), huấn luyện LightGBM LambdaRank và mạng Two-Tower Neural Retrieval. | `src/recsys/`, `src/metrics/`, `configs/model_config.yaml`, `tests/` |
 | **5. Serving & UI Sub-Agent** | Xây dựng FastAPI Backend (`/visual-search`, `/recommend`, `/outfit`, `/events`), tích hợp ONNX Runtime & LightGBM Online, xây dựng giao diện Streamlit (E-Commerce + Dashboard + Labeling Tool). | `src/backend/`, `src/frontend/`, `src/contracts/`, `docker-compose.yml`, `tests/` |
 
-*Danh sách mẫu câu lệnh (Prompt Templates) để Lead Agent hoặc Người dùng gọi từng Sub-Agent nằm tại [`docs/SUBAGENT_PROMPTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/SUBAGENT_PROMPTS.md).*
+*Danh sách mẫu câu lệnh (Prompt Templates) để Lead Agent hoặc Người dùng gọi từng Sub-Agent nằm tại [`docs/SUBAGENT_PROMPTS.md`](docs/SUBAGENT_PROMPTS.md).*
 
 ---
 
@@ -41,7 +41,7 @@ Mọi Agent khi viết code vào repo này bắt buộc phải tuân thủ 8 quy
 1. **TUYỆT ĐỐI KHÔNG BỊA SỐ LIỆU (Zero Hallucinated Metrics):**
    - Không bao giờ tự điền các con số giả định vào báo cáo, README hay bảng kết quả. Mọi con số chưa chạy thực nghiệm phải ghi là `[TBD]`. Khi chạy xong phải lưu file kết quả JSON/CSV vào `reports/tables/` kèm seed và timestamp.
 2. **Bảo toàn Định danh `article_id` (10-char Zero-Padded String):**
-   - `article_id` của H&M bắt buộc phải là chuỗi đúng 10 ký tự (ví dụ: `"0108775015"`). Luôn dùng hàm chuẩn hóa `normalize_article_id()` trong [`src/utils/id_utils.py`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/src/utils/id_utils.py) hoặc khai báo `StringType()` tường minh trong Spark. Nghiêm cấm dùng `inferSchema=True` khi đọc CSV gốc.
+   - `article_id` của H&M bắt buộc phải là chuỗi đúng 10 ký tự (ví dụ: `"0108775015"`). Luôn dùng hàm chuẩn hóa `normalize_article_id()` trong [`src/utils/id_utils.py`](src/utils/id_utils.py) hoặc khai báo `StringType()` tường minh trong Spark. Nghiêm cấm dùng `inferSchema=True` khi đọc CSV gốc.
 3. **Nén Định danh `customer_id` sang `customer_idx` (`int32`):**
    - `customer_id` gốc dài 64 ký tự hex. Từ tầng Silver trở đi, mọi phép tính Join, ALS, LightGBM, Two-Tower đều phải dùng cột `customer_idx` (`int32`) và tra cứu qua bảng `silver/customer_mapping` để tiết kiệm RAM.
 4. **Chống Rò rỉ Dữ liệu Thời gian (Strict Temporal Split — Zero Leakage):**
@@ -53,9 +53,9 @@ Mọi Agent khi viết code vào repo này bắt buộc phải tuân thủ 8 quy
    - Mọi script huấn luyện hoặc trích xuất vector đều phải chạy thử (**Smoke Test**) trên một tập nhỏ (`--limit 200` hoặc `--smoke-test`) ở máy local trước khi chạy toàn bộ hoặc đưa lên Colab.
    - Mọi mô hình đưa vào FastAPI Serving bắt buộc phải xuất ra chuẩn **ONNX FP16** (hoặc dùng `torch.inference_mode()` + `fp16`), tổng VRAM sử dụng trong FastAPI không vượt quá **1.5 GB**.
 7. **Không Phá Vỡ Data Contracts:**
-   - Nếu một Agent cần thêm cột hoặc đổi tên trường trong bảng Parquet/Delta, Redis hoặc Qdrant, Agent đó phải cập nhật [`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md) và [`src/contracts/schemas.py`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/src/contracts/schemas.py) trước tiên.
+   - Nếu một Agent cần thêm cột hoặc đổi tên trường trong bảng Parquet/Delta, Redis hoặc Qdrant, Agent đó phải cập nhật [`docs/DATA_CONTRACTS.md`](docs/DATA_CONTRACTS.md) và [`src/contracts/schemas.py`](src/contracts/schemas.py) trước tiên.
 8. **Cập nhật `STATE.md` và `HANDOFF.md` Trước Khi Kết Thúc Phiên:**
-   - Không một nhiệm vụ nào được coi là hoàn thành nếu Agent chưa chạy test kiểm chứng và chưa ghi nhật ký bàn giao vào [`docs/HANDOFF.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/HANDOFF.md) cùng trạng thái mới vào [`docs/STATE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/STATE.md).
+   - Không một nhiệm vụ nào được coi là hoàn thành nếu Agent chưa chạy test kiểm chứng và chưa ghi nhật ký bàn giao vào [`docs/HANDOFF.md`](docs/HANDOFF.md) cùng trạng thái mới vào [`docs/STATE.md`](docs/STATE.md).
 
 ---
 

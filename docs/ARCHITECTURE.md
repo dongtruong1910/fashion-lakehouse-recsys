@@ -1,7 +1,7 @@
 # KIẾN TRÚC HỆ THỐNG CHI TIẾT (SYSTEM ARCHITECTURE v3)
 
 > **Phiên bản:** v3.0 (Production-Ready cho Laptop RTX 4060 8GB VRAM, 24GB RAM + Colab Pro+)  
-> **Tài liệu liên quan:** [`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md) · [`docs/MASTER_PLAN.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/MASTER_PLAN.md) · [`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md)
+> **Tài liệu liên quan:** [`docs/DATA_CONTRACTS.md`](DATA_CONTRACTS.md) · [`docs/MASTER_PLAN.md`](MASTER_PLAN.md) · [`docs/INFRA_AND_COLAB_GUIDE.md`](INFRA_AND_COLAB_GUIDE.md)
 
 ---
 
@@ -93,7 +93,7 @@ flowchart TB
 ### 2.2. Phân hệ 2: Computer Vision Pipeline (`src/cv/`)
 
 1. **Stage 1 — Phát hiện và Cắt vùng Trang phục (Garment Detection):**
-   - Huấn luyện trên tập **Fashionpedia** đã ánh xạ từ 46 lớp gốc về **12 lớp cốt lõi** (xem chi tiết tại [`configs/class_mapping.yaml`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/configs/class_mapping.yaml)): `top`, `outerwear`, `pants`, `shorts`, `skirt`, `dress`, `shoe`, `bag`, `hat`, `eyewear`, `scarf_tie`, `belt` (loại bỏ các lớp chi tiết bộ phận như cổ áo, tay áo, khóa kéo).
+   - Huấn luyện trên tập **Fashionpedia** đã ánh xạ từ 46 lớp gốc về **12 lớp cốt lõi** (xem chi tiết tại [`configs/class_mapping.yaml`](../configs/class_mapping.yaml)): `top`, `outerwear`, `pants`, `shorts`, `skirt`, `dress`, `shoe`, `bag`, `hat`, `eyewear`, `scarf_tie`, `belt` (loại bỏ các lớp chi tiết bộ phận như cổ áo, tay áo, khóa kéo).
    - So sánh định lượng giữa **Detector Zero-shot** (`YOLO-World`) và **Fine-tuned `YOLO11s/m`** về chỉ số `mAP@50`, `mAP@50-95` và tốc độ suy luận (`PyTorch` vs `ONNX FP16`).
 2. **Stage 2 — Biểu diễn Đa phương thức (Multimodal Representation):**
    - Benchmark 3 mô hình Zero-shot trên tập Test H&M (chia theo `product_code` để không rò rỉ các màu của cùng một kiểu dáng): `CLIP ViT-B/32`, `SigLIP-2 Base (patch16-224, đa ngôn ngữ)`, và `Marqo-FashionSigLIP` / `FashionCLIP`.

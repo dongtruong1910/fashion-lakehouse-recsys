@@ -27,11 +27,24 @@ Khi kết thúc nhiệm vụ, hãy sao chép mẫu sau và điền đầy đủ 
 
 ## 2. Nhật ký Bàn giao (Mới nhất ở trên)
 
+### [2026-10-17 09:35] — Lead Architect Agent bàn giao `CHORE-MD-LINKS` (Chuẩn hóa toàn bộ liên kết Markdown sang Relative Paths)
+- **Trạng thái Task:** `DONE`
+- **Tóm tắt công việc đã làm:**
+  1. Khởi tạo Git repository và hoàn thành commit đầu tiên ("Initial commit: create project structure").
+  2. Tạo mới hoàn chỉnh tài liệu Kế hoạch tổng thể [`MASTER_PLAN.md`](MASTER_PLAN.md) để loại bỏ hoàn toàn dead links.
+  3. Chuyển đổi toàn bộ liên kết `file:///...` sang đường dẫn tương đối chuẩn (`relative paths`) có tính toán chính xác cấp thư mục (dùng dấu `/`, xử lý `../` và `../../` phù hợp từng vị trí file).
+  4. Bổ sung script kiểm thử tự động [`../tests/test_markdown_links.py`](../tests/test_markdown_links.py) để kiểm tra tính toàn vẹn của tất cả internal links.
+- **Kết quả kiểm thử / Số liệu thực nghiệm (Verification & Metrics):**
+  - Chạy `python tests/test_markdown_links.py`: 100% (59/59) relative links kiểm tra thành công, không còn URL `file:///` hay dấu `\`.
+  - Chạy `.venv/Scripts/python.exe -m unittest discover tests`: 6/6 test cases kiểm tra contracts/metrics đều pass.
+- **Vấn đề tồn đọng / Lưu ý cho Agent tiếp theo (Next Steps):**
+  - Codebase và hệ thống tài liệu đã hoàn thiện, sẵn sàng bắt đầu **`TASK-01`** (`docker compose up -d`) và **`TASK-02`** (tải dataset H&M + Fashionpedia).
+
 ### [2026-10-17 08:30] — Lead Architect Agent bàn giao `TASK-00` (Khởi tạo Kiến trúc & Codebase v3)
 - **Trạng thái Task:** `DONE`
 - **Tóm tắt công việc đã làm:**
-  1. Đánh giá chi tiết bản kế hoạch `plan_v2_opus55.md`, chỉ ra 7 điểm nghẽn thực tế trên cấu hình Laptop RTX 4060 (8GB VRAM) + 24GB RAM và ghi nhận đầy đủ tại [`docs/ke_hoach_ban_dau/nhan_xet_va_chinh_sua_plan_v2.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ke_hoach_ban_dau/nhan_xet_va_chinh_sua_plan_v2.md).
-  2. Xây dựng bộ tài liệu điều phối Multi-Agent hoàn chỉnh gồm: [`AGENTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/AGENTS.md), [`README.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/README.md), [`docs/MASTER_PLAN.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/MASTER_PLAN.md), [`docs/ARCHITECTURE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ARCHITECTURE.md), [`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md), [`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md), [`docs/STATE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/STATE.md), và [`docs/SUBAGENT_PROMPTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/SUBAGENT_PROMPTS.md).
+  1. Đánh giá chi tiết bản kế hoạch `plan_v2_opus55.md`, chỉ ra 7 điểm nghẽn thực tế trên cấu hình Laptop RTX 4060 (8GB VRAM) + 24GB RAM và ghi nhận đầy đủ tại [`docs/ke_hoach_ban_dau/nhan_xet_va_chinh_sua_plan_v2.md`](ke_hoach_ban_dau/nhan_xet_va_chinh_sua_plan_v2.md).
+  2. Xây dựng bộ tài liệu điều phối Multi-Agent hoàn chỉnh gồm: [`AGENTS.md`](../AGENTS.md), [`README.md`](../README.md), [`docs/MASTER_PLAN.md`](MASTER_PLAN.md), [`docs/ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/DATA_CONTRACTS.md`](DATA_CONTRACTS.md), [`docs/INFRA_AND_COLAB_GUIDE.md`](INFRA_AND_COLAB_GUIDE.md), [`docs/STATE.md`](STATE.md), và [`docs/SUBAGENT_PROMPTS.md`](SUBAGENT_PROMPTS.md).
   3. Thiết lập toàn bộ cấu trúc Codebase chuẩn Production:
      - `docker-compose.yml` (đã sửa lỗi Dual-Listener cho Kafka KRaft `INTERNAL://kafka:29092` & `EXTERNAL://localhost:9092`).
      - `configs/` (`paths.yaml`, `class_mapping.yaml`, `spark_config.yaml`, `model_config.yaml`).

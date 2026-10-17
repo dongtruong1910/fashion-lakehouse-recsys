@@ -12,15 +12,15 @@ Nếu bạn là **Người phát triển** hoặc **AI Agent** mới vào dự �
 
 | Tài liệu | Mục đích | Đối tượng đọc |
 | :--- | :--- | :--- |
-| **[`AGENTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/AGENTS.md)** | Quy tắc điều phối Multi-Agent, phân quyền, 8 quy tắc kỹ thuật bất khả xâm phạm. | **Bắt buộc cho mọi AI Agent** |
-| **[`docs/STATE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/STATE.md)** | Bảng theo dõi tiến độ thời gian thực, trạng thái các Decision Gates và số liệu đã đo. | Lead Agent, Sub-Agents, User |
-| **[`docs/MASTER_PLAN.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/MASTER_PLAN.md)** | Kế hoạch thực thi tổng thể (Plan v3) chia theo 6 Work Packages, danh sách Task và tiêu chí nghiệm thu. | Lead Agent, Sub-Agents, User |
-| **[`docs/ARCHITECTURE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ARCHITECTURE.md)** | Kiến trúc chi tiết 4 phân hệ: Lakehouse, Computer Vision, Hybrid RecSys, và Real-time Serving. | Tất cả |
-| **[`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md)** | Đặc tả Schema của các bảng Delta/Parquet, Qdrant Payload, Redis Keys, Kafka Event và FastAPI. | Sub-Agents khi viết code |
-| **[`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md)** | Hướng dẫn kết hợp Laptop RTX 4060 $\leftrightarrow$ Colab Pro+, xử lý model lớn (ONNX FP16/INT8, tách CPU/GPU) và cơ chế kết nối/đồng bộ. | User & CV/RecSys Agents |
-| **[`docs/HANDOFF.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/HANDOFF.md)** | Nhật ký bàn giao công việc giữa các Agent qua từng phiên làm việc. | Lead Agent & Sub-Agents |
-| **[`docs/SUBAGENT_PROMPTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/SUBAGENT_PROMPTS.md)** | Các mẫu prompt chuẩn để gọi Sub-Agents thực thi từng module. | Lead Agent & User |
-| **[`docs/ke_hoach_ban_dau/`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ke_hoach_ban_dau/)** | Lưu trữ bản thảo ban đầu (v1, v2) và bản nhận xét/hiệu chỉnh kỹ thuật. | Tham khảo lịch sử |
+| **[`AGENTS.md`](AGENTS.md)** | Quy tắc điều phối Multi-Agent, phân quyền, 8 quy tắc kỹ thuật bất khả xâm phạm. | **Bắt buộc cho mọi AI Agent** |
+| **[`docs/STATE.md`](docs/STATE.md)** | Bảng theo dõi tiến độ thời gian thực, trạng thái các Decision Gates và số liệu đã đo. | Lead Agent, Sub-Agents, User |
+| **[`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md)** | Kế hoạch thực thi tổng thể (Plan v3) chia theo 6 Work Packages, danh sách Task và tiêu chí nghiệm thu. | Lead Agent, Sub-Agents, User |
+| **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** | Kiến trúc chi tiết 4 phân hệ: Lakehouse, Computer Vision, Hybrid RecSys, và Real-time Serving. | Tất cả |
+| **[`docs/DATA_CONTRACTS.md`](docs/DATA_CONTRACTS.md)** | Đặc tả Schema của các bảng Delta/Parquet, Qdrant Payload, Redis Keys, Kafka Event và FastAPI. | Sub-Agents khi viết code |
+| **[`docs/INFRA_AND_COLAB_GUIDE.md`](docs/INFRA_AND_COLAB_GUIDE.md)** | Hướng dẫn kết hợp Laptop RTX 4060 $\leftrightarrow$ Colab Pro+, xử lý model lớn (ONNX FP16/INT8, tách CPU/GPU) và cơ chế kết nối/đồng bộ. | User & CV/RecSys Agents |
+| **[`docs/HANDOFF.md`](docs/HANDOFF.md)** | Nhật ký bàn giao công việc giữa các Agent qua từng phiên làm việc. | Lead Agent & Sub-Agents |
+| **[`docs/SUBAGENT_PROMPTS.md`](docs/SUBAGENT_PROMPTS.md)** | Các mẫu prompt chuẩn để gọi Sub-Agents thực thi từng module. | Lead Agent & User |
+| **[`docs/ke_hoach_ban_dau/`](docs/ke_hoach_ban_dau/)** | Lưu trữ bản thảo ban đầu (v1, v2) và bản nhận xét/hiệu chỉnh kỹ thuật. | Tham khảo lịch sử |
 
 ---
 

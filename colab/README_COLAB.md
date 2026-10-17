@@ -1,6 +1,6 @@
 # HƯỚNG DẪN CHẠY JOB TRÊN GOOGLE COLAB PRO+ (GPU L4) & TỰ ĐỘNG TẮT RUNTIME
 
-> **Đọc kỹ trước khi bật GPU trên Colab:** [`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md)
+> **Đọc kỹ trước khi bật GPU trên Colab:** [`docs/INFRA_AND_COLAB_GUIDE.md`](../docs/INFRA_AND_COLAB_GUIDE.md)
 
 ## Quy trình 4 Cell Chuẩn cho Mọi Notebook trên Colab Pro+ (L4 GPU)
 

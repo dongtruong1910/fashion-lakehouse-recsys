@@ -42,7 +42,7 @@
 
 ### Lớp 1: Chốt kích thước Backbone "Vừa vặn" ngay từ thiết kế (Right-Sizing Architecture)
 * Không bao giờ chọn các backbone khổng lồ mang tính phô trương nhưng không tăng nhiều độ chính xác trên H&M như `ViT-Huge`, `SigLIP-SO400M`, `EVA-02-Large` hay `YOLO11x`.
-* Trong [`configs/model_config.yaml`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/configs/model_config.yaml), chúng ta khóa cứng kích thước mô hình ở ngưỡng tối ưu cho RTX 4060:
+* Trong [`configs/model_config.yaml`](../configs/model_config.yaml), chúng ta khóa cứng kích thước mô hình ở ngưỡng tối ưu cho RTX 4060:
   * **Detector:** `YOLO11s` (9.4M params) hoặc `YOLO11m` (20.1M params).
   * **Multimodal Encoder:** `SigLIP-2 Base (ViT-B/16)` hoặc `CLIP ViT-B/32` (~86M params cho nhánh ảnh, ~65M params cho nhánh text).
   * **Two-Tower User Encoder:** MLP + 1 lớp Attention nhẹ (~2M params).
@@ -54,7 +54,7 @@
 * **Quy trình bắt buộc ở bước cuối trên Colab (trước khi tải về máy cá nhân):**
   1. Nếu dùng LoRA: Gọi `model = model.merge_and_unload()` để cộng thẳng ma trận LoRA $\Delta W = B \cdot A$ vào trọng số gốc $W_0$ (nhờ đó khi chạy ở máy cá nhân không tốn thêm bất kỳ phép nhân ma trận phụ nào).
   2. Chuyển sang chế độ `model.eval().half()` (**FP16** — giảm ngay 50% dung lượng và VRAM).
-  3. Xuất thẳng ra định dạng **ONNX Runtime (`.onnx` FP16)** hoặc **INT8 Quantization** bằng script [`src/cv/export_onnx.py`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/src/cv/export_onnx.py).
+  3. Xuất thẳng ra định dạng **ONNX Runtime (`.onnx` FP16)** hoặc **INT8 Quantization** bằng script [`src/cv/export_onnx.py`](../src/cv/export_onnx.py).
 
 **Bảng tính toán VRAM thực tế khi chạy đồng thời TẤT CẢ các mô hình trong FastAPI trên RTX 4060 (8.192 MB VRAM):**
 
@@ -96,7 +96,7 @@ Nhiều bạn mới dùng Colab Pro thường tìm cách cài `openssh-server` +
 
 ### 3.2. Quy trình Kết nối Chuẩn Công nghiệp: "Code & Smoke-Test Local $\rightarrow$ Git/Drive $\rightarrow$ Colab CLI Execution + Auto-Shutdown"
 
-Đây là quy trình được thiết kế sẵn trong thư mục [`colab/`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/colab/) của codebase này:
+Đây là quy trình được thiết kế sẵn trong thư mục [`colab/`](../colab/) của codebase này:
 
 ```mermaid
 sequenceDiagram

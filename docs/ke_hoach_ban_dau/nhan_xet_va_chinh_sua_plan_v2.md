@@ -1,8 +1,8 @@
 # ĐÁNH GIÁ CHI TIẾT & BẢN HIỆU CHỈNH KỸ THUẬT TỪ PLAN v2 (OPUS 5.5) LÊN PLAN v3 (PRODUCTION-READY)
 
 > **Tài liệu đối chiếu:**
-> - Bản gốc v1: [`plan_v1.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ke_hoach_ban_dau/plan_v1.md)
-> - Bản nâng cấp v2 (Opus 5.5): [`plan_v2_opus55.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ke_hoach_ban_dau/plan_v2_opus55.md)
+> - Bản gốc v1: [`plan_v1.md`](plan_v1.md)
+> - Bản nâng cấp v2 (Opus 5.5): [`plan_v2_opus55.md`](plan_v2_opus55.md)
 > - **Mục tiêu của file này:** Ghi nhận toàn bộ ưu điểm cần giữ lại của Plan v2, chỉ rõ **7 điểm nghẽn kỹ thuật / bộ nhớ / vận hành** khi chạy thực tế trên phần cứng cá nhân (**RTX 4060 8GB VRAM + 24GB RAM + Colab Pro+ 200 CU**), và chốt phương án chỉnh sửa cuối cùng để đưa vào hệ thống tài liệu làm việc chính thức (`docs/MASTER_PLAN.md`, `docs/ARCHITECTURE.md`).
 
 ---
@@ -102,9 +102,9 @@
 
 Kể từ bước này, thư mục `docs/ke_hoach_ban_dau/` được đóng băng như **hồ sơ thảo luận ban đầu**. Toàn bộ quá trình triển khai của bạn, của Lead Agent và các Sub-Agents sẽ tuân theo hệ thống tài liệu vận hành chính thức tại:
 
-1. [`AGENTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/AGENTS.md) — Quy tắc điều phối giữa Lead Agent và các Sub-Agents.
-2. [`docs/MASTER_PLAN.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/MASTER_PLAN.md) — Kế hoạch thực thi chi tiết (Plan v3) chia theo các Work Packages và Decision Gates.
-3. [`docs/ARCHITECTURE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/ARCHITECTURE.md) — Kiến trúc kỹ thuật chi tiết đã áp dụng 7 bản vá trên.
-4. [`docs/DATA_CONTRACTS.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/DATA_CONTRACTS.md) — Chuẩn hóa Schema dữ liệu, tên cột, khóa Redis, Qdrant Payload và REST API.
-5. [`docs/INFRA_AND_COLAB_GUIDE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/INFRA_AND_COLAB_GUIDE.md) — Chiến lược kết hợp Laptop RTX 4060 $\leftrightarrow$ Colab Pro+, xử lý mô hình lớn (ONNX FP16/INT8, Device Placement) và quy trình kết nối/đồng bộ không tốn CU.
-6. [`docs/STATE.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/STATE.md) & [`docs/HANDOFF.md`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/docs/HANDOFF.md) — Bảng theo dõi trạng thái trực tiếp và nhật ký bàn giao giữa các Agent.
+1. [`AGENTS.md`](../../AGENTS.md) — Quy tắc điều phối giữa Lead Agent và các Sub-Agents.
+2. [`docs/MASTER_PLAN.md`](../MASTER_PLAN.md) — Kế hoạch thực thi chi tiết (Plan v3) chia theo các Work Packages và Decision Gates.
+3. [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md) — Kiến trúc kỹ thuật chi tiết đã áp dụng 7 bản vá trên.
+4. [`docs/DATA_CONTRACTS.md`](../DATA_CONTRACTS.md) — Chuẩn hóa Schema dữ liệu, tên cột, khóa Redis, Qdrant Payload và REST API.
+5. [`docs/INFRA_AND_COLAB_GUIDE.md`](../INFRA_AND_COLAB_GUIDE.md) — Chiến lược kết hợp Laptop RTX 4060 $\leftrightarrow$ Colab Pro+, xử lý mô hình lớn (ONNX FP16/INT8, Device Placement) và quy trình kết nối/đồng bộ không tốn CU.
+6. [`docs/STATE.md`](../STATE.md) & [`docs/HANDOFF.md`](../HANDOFF.md) — Bảng theo dõi trạng thái trực tiếp và nhật ký bàn giao giữa các Agent.

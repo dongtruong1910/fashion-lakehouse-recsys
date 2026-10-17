@@ -1,7 +1,7 @@
 # ĐẶC TẢ HỢP ĐỒNG DỮ LIỆU & GIAO DIỆN (DATA & API CONTRACTS)
 
 > **Mục đích:** Đây là "Bản hợp đồng kỹ thuật" giữa các Sub-Agents (`Data-Agent`, `CV-Agent`, `RecSys-Agent`, `Serving-Agent`).  
-> **Quy tắc bắt buộc:** Mọi Sub-Agent phải đặt tên cột, kiểu dữ liệu, khóa Redis, tên collection Qdrant và schema JSON khớp **100%** với tài liệu này và file [`src/contracts/schemas.py`](file:///D:/G/BT,BTL,NCKH/BTL/BTL%20CV%20BigData/src/contracts/schemas.py).
+> **Quy tắc bắt buộc:** Mọi Sub-Agent phải đặt tên cột, kiểu dữ liệu, khóa Redis, tên collection Qdrant và schema JSON khớp **100%** với tài liệu này và file [`src/contracts/schemas.py`](../src/contracts/schemas.py).
 
 ---
 
