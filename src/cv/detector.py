@@ -11,6 +11,48 @@ from src.contracts.schemas import BoundingBoxDetection
 from src.utils.config import get_class_mapping_config, get_model_config
 
 
+def resolve_detector_class_from_model_names(
+    cls_id: int,
+    model_names: dict[int, str] | list[str] | None,
+    fashion12_map: dict[int, str],
+    fashionpedia_to_detector: dict[str, str] | None = None,
+) -> str:
+    """Validate and map a predicted class ID using the checkpoint's actual class ontology (Finding A04).
+
+    Raises:
+        RuntimeError: If a generic COCO checkpoint (e.g. class 0 == 'person') is used without fashion12 alignment.
+    """
+    valid_fashion12 = set(fashion12_map.values())
+    if model_names is None:
+        return fashion12_map.get(cls_id, "other")
+
+    if isinstance(model_names, list):
+        names_dict = {i: str(n) for i, n in enumerate(model_names)}
+    else:
+        names_dict = {int(k): str(v) for k, v in model_names.items()}
+
+    # Detect unadapted COCO80 checkpoints (where class 0 is 'person')
+    if names_dict.get(0, "").strip().lower() == "person":
+        raise RuntimeError(
+            "Detector ontology mismatch (Finding A04): Loaded checkpoint uses COCO classes "
+            "(id 0 = 'person') instead of the 12 Fashionpedia garment classes. "
+            "Use a trained fashion12 checkpoint or a YOLO-World model with set_classes()."
+        )
+
+    raw_name = names_dict.get(cls_id, "").strip()
+    if raw_name in valid_fashion12:
+        return raw_name
+    if fashionpedia_to_detector and raw_name in fashionpedia_to_detector:
+        return fashionpedia_to_detector[raw_name]
+    if set(names_dict.values()).issubset(valid_fashion12 | {"other"}):
+        return fashion12_map.get(cls_id, "other")
+
+    raise RuntimeError(
+        f"Detector ontology mismatch (Finding A04): Unrecognized class '{raw_name}' (id={cls_id}) "
+        f"not in 12 core fashion classes {sorted(valid_fashion12)}."
+    )
+
+
 class GarmentDetector:
     """Unified interface for detecting and cropping 12 core fashion garment categories."""
 
@@ -20,15 +62,21 @@ class GarmentDetector:
         self.id_to_class: dict[int, str] = {
             int(k): v for k, v in self.class_cfg["detector_classes"].items()
         }
-        self.weights_path = str(weights_path or self.model_cfg["train_model"])
+        self.fp_to_detector: dict[str, str] = dict(
+            self.class_cfg.get("fashionpedia_to_detector", {})
+        )
+        self.weights_path = str(weights_path or self.model_cfg["zeroshot_model"])
         self.device = device
         self._model: Any = None
 
     def load(self) -> None:
-        """Lazily load Ultralytics YOLO or ONNX Runtime session."""
+        """Lazily load Ultralytics YOLO/YOLO-World or ONNX Runtime session and configure classes."""
         from ultralytics import YOLO
 
         self._model = YOLO(self.weights_path)
+        if "world" in Path(self.weights_path).name.lower() and hasattr(self._model, "set_classes"):
+            ordered_classes = [self.id_to_class[i] for i in sorted(self.id_to_class)]
+            self._model.set_classes(ordered_classes)
 
     def detect(
         self,
@@ -48,16 +96,23 @@ class GarmentDetector:
             conf=conf,
             iou=iou,
             imgsz=self.model_cfg["imgsz"],
+            device=self.device,
             verbose=False,
         )
         detections: list[BoundingBoxDetection] = []
         if not results or len(results[0].boxes) == 0:
             return detections
 
+        model_names = getattr(results[0], "names", None) or getattr(self._model, "names", None)
         boxes = results[0].boxes
         for idx in range(len(boxes)):
             cls_id = int(boxes.cls[idx].item())
-            det_class = self.id_to_class.get(cls_id, "other")
+            det_class = resolve_detector_class_from_model_names(
+                cls_id=cls_id,
+                model_names=model_names,
+                fashion12_map=self.id_to_class,
+                fashionpedia_to_detector=self.fp_to_detector,
+            )
             score = float(boxes.conf[idx].item())
             x1, y1, x2, y2 = [float(v) for v in boxes.xyxy[idx].tolist()]
             detections.append(

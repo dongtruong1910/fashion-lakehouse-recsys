@@ -1,0 +1,204 @@
+{
+  "report_id": "codebase_fixes_v3_1_2026-10-18",
+  "seed": 42,
+  "timestamp": "2026-10-18T13:00:00+07:00",
+  "task_id": "TASK-00-FIX",
+  "parent_audit_report": "reports/tables/codebase_review_2026-10-17.json",
+  "environment": {
+    "python": "3.12.x (.venv)",
+    "os": "Windows",
+    "test_runner": "unittest discover -s tests -v"
+  },
+  "summary": {
+    "findings_resolved": 20,
+    "section_5_edge_cases_resolved": 5,
+    "unit_and_regression_tests_passed": 14,
+    "unit_and_regression_tests_failed": 0,
+    "docker_compose_config_valid": true
+  },
+  "resolutions": [
+    {
+      "id": "A01",
+      "status": "FIXED",
+      "files": [
+        "src/utils/id_utils.py",
+        "spark_jobs/batch/b1_clean_silver.py",
+        "configs/model_config.yaml",
+        "docs/DATA_CONTRACTS.md",
+        "docs/MASTER_PLAN.md",
+        "AGENTS.md"
+      ],
+      "verification": "HM_WEEK_ANCHOR_DATE=2018-09-19 maps 2020-09-09..2020-09-15 -> week 103 (7 days, Dev Week) and 2020-09-16..2020-09-22 -> week 104 (7 days, Final Test Week). Covered by test_a01_shared_week_calendar_and_leakage_guard."
+    },
+    {
+      "id": "A02",
+      "status": "FIXED",
+      "files": [
+        "src/recsys/lgbm_ranker.py"
+      ],
+      "verification": "prepare_lgbm_query_frame() sorts and groups by (target_week, customer_idx) and enforces unique (target_week, customer_idx, article_id). Multi-week customer probe returns groups=[2, 2]. Covered by test_a02_lgbm_query_grouping_by_week_and_customer."
+    },
+    {
+      "id": "A03",
+      "status": "FIXED",
+      "files": [
+        "spark_jobs/batch/b0_ingest_bronze.py",
+        "spark_jobs/batch/b1_clean_silver.py",
+        "configs/paths.yaml"
+      ],
+      "verification": "resolve_bronze_output_dir() and resolve_silver_output_dir() route --smoke-test to data/lakehouse_smoke/... and raise ValueError if smoke output equals production paths; B0 checks pre-lpad digit regex; B1 adds mapping_version to customer_mapping. Covered by test_a03_smoke_test_output_isolation."
+    },
+    {
+      "id": "A04",
+      "status": "FIXED",
+      "files": [
+        "src/cv/detector.py"
+      ],
+      "verification": "resolve_detector_class_from_model_names() rejects unadapted COCO80 checkpoints (0='person') and maps Fashionpedia-12 / YOLO-World class names cleanly; FashionDetector passes device=self.device. Covered by test_a04_detector_ontology_guard_rejects_coco80."
+    },
+    {
+      "id": "A05",
+      "status": "FIXED",
+      "files": [
+        "src/recsys/two_tower.py"
+      ],
+      "verification": "UserTower handles all-zero history via safe key_padding_mask and learned empty_history_emb fallback (0 NaN across 64 dims) and applies positional + recency time-decay weighting. Covered by test_a05_and_a19_two_tower_empty_history_time_decay_and_oov."
+    },
+    {
+      "id": "A06",
+      "status": "FIXED",
+      "files": [
+        "src/contracts/schemas.py",
+        "src/utils/id_utils.py",
+        "src/cv/qdrant_indexer.py"
+      ],
+      "verification": "UserInteractionEvent and VisualSearchPayload enforce UUID event_id, ISO-8601 timezone-aware timestamps, finite non-negative price, valid literal enums, customer_id validation, and 7-digit product_code prefix consistency. Covered by test_invalid_contracts_raise."
+    },
+    {
+      "id": "A07",
+      "status": "FIXED",
+      "files": [
+        "docker-compose.yml"
+      ],
+      "verification": "Added KAFKA_LOG_DIRS: /var/lib/kafka/data matching mounted volume kafka_data:/var/lib/kafka/data; verified with docker compose config --quiet."
+    },
+    {
+      "id": "A08",
+      "status": "FIXED",
+      "files": [
+        "src/streaming/event_simulator.py",
+        "spark_jobs/streaming/s1_stream_processor.py",
+        "src/contracts/schemas.py"
+      ],
+      "verification": "EventSimulator and S1 stream processor emit/parse UTC event_time as streaming watermark clock while preserving historical H&M date in original_t_dat."
+    },
+    {
+      "id": "A09",
+      "status": "FIXED",
+      "files": [
+        "spark_jobs/streaming/s1_stream_processor.py",
+        "docs/DATA_CONTRACTS.md"
+      ],
+      "verification": "Added record_session_event_idempotent() using event:seen:{event_id} deduplication and publish_trending_window_snapshot() for atomic window snapshot replacement. Covered by test_a09_a16_a17_a18_and_kappa_edge_cases."
+    },
+    {
+      "id": "A10",
+      "status": "FIXED",
+      "files": [
+        "configs/model_config.yaml",
+        "docs/MASTER_PLAN.md",
+        "docs/DATA_CONTRACTS.md",
+        "AGENTS.md"
+      ],
+      "verification": "Formalized Two-Stage Temporal Split: Dev Week = 103 (2020-09-09..15) for tuning/ablation/gate calibration, Final Test Week = 104 (2020-09-16..22) for final holdout evaluation."
+    },
+    {
+      "id": "A11",
+      "status": "FIXED",
+      "files": [
+        "src/metrics/cv_metrics.py",
+        "docs/MASTER_PLAN.md"
+      ],
+      "verification": "Added i2i_precision_at_k() excluding query_article_id, documented pre-filter vs post-filter CatConsistency@10, and specified frozen qrels + shared Ideal DCG over pooled union."
+    },
+    {
+      "id": "A12",
+      "status": "FIXED",
+      "files": [
+        "docs/MASTER_PLAN.md",
+        "docs/DATA_CONTRACTS.md",
+        "docs/ARCHITECTURE.md",
+        "configs/model_config.yaml"
+      ],
+      "verification": "Synchronized table names (silver/articles_enriched, gold/candidates_b6, gold/features_b7), Redis keys/TTLs (session:* TTL 1800s, trending:1h:top100 TTL 3600s), API routes (/recommend/{customer_id}), and Qdrant hm_visual_search vectors (image_dense 768-d, tt_item_dense 64-d)."
+    },
+    {
+      "id": "A13",
+      "status": "FIXED",
+      "files": [
+        "src/recsys/features_gpu.py",
+        "docs/INFRA_AND_COLAB_GUIDE.md"
+      ],
+      "verification": "Chunked NumPy fallback in compute_user_item_visual_similarity() by batch_size to avoid peak RAM spikes; labeled INFRA tables as Design Budgets & Target SLAs until measured."
+    },
+    {
+      "id": "A14",
+      "status": "FIXED",
+      "files": [
+        "pyproject.toml",
+        "README.md",
+        "docs/INFRA_AND_COLAB_GUIDE.md"
+      ],
+      "verification": "Added [tool.setuptools.packages.find] where=['.'] include=['src*', 'spark_jobs*'] to pyproject.toml and documented --system-site-packages venv setup."
+    },
+    {
+      "id": "A15",
+      "status": "FIXED",
+      "files": [
+        "scripts/check_hm256_aspect_ratio.py",
+        "scripts/resize_hm_aspect_pad.py"
+      ],
+      "verification": "check_hm256_aspect_ratio.py compares 256x256 images against original H&M images when available and returns INCONCLUSIVE_NO_ORIGINAL_REFERENCE when originals are absent."
+    },
+    {
+      "id": "A16",
+      "status": "FIXED",
+      "files": [
+        "src/cv/qdrant_indexer.py"
+      ],
+      "verification": "validate_existing_collection_params() verifies existing Qdrant collection vector dimensions before indexing. Covered by test_a09_a16_a17_a18_and_kappa_edge_cases."
+    },
+    {
+      "id": "A17",
+      "status": "FIXED",
+      "files": [
+        "src/cv/embedder.py"
+      ],
+      "verification": "get_text_tokenizer_kwargs() sets padding='max_length' and max_length=64 for SigLIP/FashionSigLIP models. Covered by test_a09_a16_a17_a18_and_kappa_edge_cases."
+    },
+    {
+      "id": "A18",
+      "status": "FIXED",
+      "files": [
+        "src/metrics/recsys_metrics.py"
+      ],
+      "verification": "map_at_k() and candidate_recall_at_k() materialize ground_truth iterables once into sets so single-pass generators yield identical metrics to lists/sets. Covered by test_a09_a16_a17_a18_and_kappa_edge_cases."
+    },
+    {
+      "id": "A19",
+      "status": "FIXED",
+      "files": [
+        "src/recsys/two_tower.py"
+      ],
+      "verification": "Added recency time-decay weighting to UserTower and OOV/ID-dropout support to ItemTower for cold-start item generalization. Covered by test_a05_and_a19_two_tower_empty_history_time_decay_and_oov."
+    },
+    {
+      "id": "A20",
+      "status": "FIXED",
+      "files": [
+        "src/backend/main.py"
+      ],
+      "verification": "/health reports status='scaffold_only' with dependencies_checked=False, and /events sets persisted=False until TASK-SRV-01 wires live dependencies."
+    }
+  ]
+}

@@ -24,10 +24,16 @@ def build_fashion_event(
     sales_channel_id: int = 2,
     event_type: EventType = "purchase",
     source: EventSource = "replay",
+    use_historical_event_time: bool = False,
 ) -> FashionEvent:
-    """Create a validated FashionEvent instance with synthetic intra-day time for replay or real time for UI."""
+    """Create a validated FashionEvent instance with unified streaming clock (Finding A08).
+
+    By default (`use_historical_event_time=False`), both `replay` and `ui` events use the active
+    UTC streaming clock for `event_time` while preserving `original_t_dat=date_str` on replay events,
+    preventing 2026 UI events from advancing the Spark watermark and dropping 2020 replay events.
+    """
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    if source == "replay":
+    if source == "replay" and use_historical_event_time:
         hh = random.randint(0, 23)
         mm = random.randint(0, 59)
         ss = random.randint(0, 59)
@@ -45,6 +51,7 @@ def build_fashion_event(
         source=source,
         price=price,
         sales_channel_id=1 if sales_channel_id == 1 else 2,
+        original_t_dat=date_str if source == "replay" else None,
     )
 
 

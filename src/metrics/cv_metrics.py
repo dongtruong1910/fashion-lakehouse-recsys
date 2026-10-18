@@ -58,8 +58,23 @@ def cat_consistency_at_k(
     return hits / len(top_k)
 
 
-def cohens_kappa_score(rater_a: Sequence[int], rater_b: Sequence[int]) -> float:
-    """Compute Cohen's Kappa inter-annotator agreement for graded relevance ratings."""
+def i2i_precision_at_k(
+    query_article_id: str,
+    retrieved_article_ids: Sequence[str],
+    relevant_article_ids: set[str] | Sequence[str],
+    k: int = 10,
+) -> float:
+    """Compute Image-to-Image Precision@K while strictly excluding the query `article_id` itself (Finding A11)."""
+    filtered = [aid for aid in retrieved_article_ids if aid != query_article_id][:k]
+    if not filtered:
+        return 0.0
+    rel_set = set(relevant_article_ids) - {query_article_id}
+    hits = sum(1 for aid in filtered if aid in rel_set)
+    return hits / len(filtered)
+
+
+def cohens_kappa_summary(rater_a: Sequence[int], rater_b: Sequence[int]) -> dict[str, float | str | None]:
+    """Compute Cohen's Kappa along with observed/expected agreement and degenerate-case status (Section 5.1)."""
     if len(rater_a) != len(rater_b) or len(rater_a) == 0:
         raise ValueError("Rater sequences must be non-empty and have equal length.")
     a = np.asarray(rater_a, dtype=int)
@@ -75,5 +90,27 @@ def cohens_kappa_score(rater_a: Sequence[int], rater_b: Sequence[int]) -> float:
         p_e += p_a * p_b
 
     if abs(1.0 - p_e) < 1e-12:
-        return 1.0
-    return (p_o - p_e) / (1.0 - p_e)
+        return {
+            "kappa": None,
+            "observed_agreement": p_o,
+            "expected_agreement": p_e,
+            "status": "undefined_zero_variance",
+        }
+    return {
+        "kappa": (p_o - p_e) / (1.0 - p_e),
+        "observed_agreement": p_o,
+        "expected_agreement": p_e,
+        "status": "ok",
+    }
+
+
+def cohens_kappa_score(rater_a: Sequence[int], rater_b: Sequence[int]) -> float:
+    """Compute Cohen's Kappa inter-annotator agreement for graded relevance ratings.
+
+    Note (Section 5.1): When both raters assign only a single identical label across all items,
+    expected chance agreement $p_e = 1.0$ and the denominator $1 - p_e = 0$, so Kappa is undefined (`NaN`).
+    """
+    summary = cohens_kappa_summary(rater_a, rater_b)
+    if summary["kappa"] is None:
+        return float("nan")
+    return float(summary["kappa"])

@@ -13,13 +13,18 @@ raw:
 splits:
   hm_product_split: "data/splits/hm_split_v1.parquet"
   temporal_validation:
+    anchor_date: "2018-09-19"
+    ranker_train_weeks: [100, 101, 102]
+    dev_start_date: "2020-09-09"
+    dev_end_date: "2020-09-15"
+    dev_week_num: 103
     val_start_date: "2020-09-16"
     val_end_date: "2020-09-22"
     val_week_num: 104
-    ranker_train_weeks: [101, 102, 103]
 
 lakehouse:
   base_dir: "data/lakehouse"
+  smoke_base_dir: "data/lakehouse_smoke"
   bronze:
     articles: "data/lakehouse/bronze/articles"
     customers: "data/lakehouse/bronze/customers"

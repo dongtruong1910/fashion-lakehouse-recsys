@@ -41,7 +41,7 @@ def ap_at_k(actual: Sequence[str] | set[str], predicted: Sequence[str], k: int =
 
 
 def map_at_k(
-    ground_truth: Mapping[str | int, Sequence[str] | set[str]],
+    ground_truth: Mapping[str | int, Iterable[str]],
     predictions: Mapping[str | int, Sequence[str]],
     k: int = 12,
 ) -> float:
@@ -50,19 +50,20 @@ def map_at_k(
     Note: Per Kaggle H&M rules, only customers who made at least 1 purchase in the validation
     period are included in the denominator $|U|$.
     """
-    valid_users = [u for u, items in ground_truth.items() if len(items) > 0]
+    gt_sets: dict[str | int, set[str]] = {u: set(items) for u, items in ground_truth.items()}
+    valid_users = [u for u, item_set in gt_sets.items() if len(item_set) > 0]
     if not valid_users:
         return 0.0
 
     total_ap = 0.0
     for u in valid_users:
         user_preds = predictions.get(u, [])
-        total_ap += ap_at_k(ground_truth[u], user_preds, k=k)
+        total_ap += ap_at_k(gt_sets[u], user_preds, k=k)
 
     return total_ap / len(valid_users)
 
 
-def recall_at_k(actual: Sequence[str] | set[str], predicted: Sequence[str], k: int = 12) -> float:
+def recall_at_k(actual: Iterable[str], predicted: Sequence[str], k: int = 12) -> float:
     """Compute Recall@K for a single customer."""
     actual_set = set(actual)
     if not actual_set:
@@ -76,10 +77,14 @@ def candidate_recall_at_k(
     candidates: Mapping[str | int, Sequence[str]],
     k: int = 100,
 ) -> float:
-    """Compute mean Candidate Recall@K — the upper bound ceiling for the second-stage ranker."""
-    valid_users = [u for u, items in ground_truth.items() if len(set(items)) > 0]
+    """Compute mean Candidate Recall@K — the upper bound ceiling for the second-stage ranker.
+
+    Materializes each customer's ground-truth iterable once so one-shot iterators are never exhausted (Finding A18).
+    """
+    gt_sets: dict[str | int, set[str]] = {u: set(items) for u, items in ground_truth.items()}
+    valid_users = [u for u, item_set in gt_sets.items() if len(item_set) > 0]
     if not valid_users:
         return 0.0
 
-    recalls = [recall_at_k(set(ground_truth[u]), candidates.get(u, []), k=k) for u in valid_users]
+    recalls = [recall_at_k(gt_sets[u], candidates.get(u, []), k=k) for u in valid_users]
     return sum(recalls) / len(recalls)

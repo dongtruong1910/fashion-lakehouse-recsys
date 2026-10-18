@@ -45,6 +45,56 @@ CATEGORICAL_FEATURES: list[str] = [
 ]
 
 
+def prepare_lgbm_query_frame(
+    df: pd.DataFrame,
+    drop_all_zero_groups: bool = False,
+) -> tuple[pd.DataFrame, np.ndarray]:
+    """Sort candidate DataFrame by `(target_week, customer_idx, article_id)` and compute LambdaRank group sizes.
+
+    Fixes Finding A02:
+    - A customer appearing in multiple target weeks (e.g. week 101 and week 102) represents two distinct
+      ranking queries with different historical cutoffs and labels, and MUST NOT be merged into one group.
+    - Enforces uniqueness of `(target_week, customer_idx, article_id)`.
+    - Optionally drops all-zero label groups ONLY during training (`drop_all_zero_groups=True`), never during evaluation.
+    """
+    required_cols = {"customer_idx"}
+    if not required_cols.issubset(df.columns):
+        raise ValueError(f"DataFrame missing required columns: {required_cols - set(df.columns)}")
+
+    work_df = df.copy()
+    if "target_week" not in work_df.columns:
+        work_df["target_week"] = 0
+
+    sort_cols = ["target_week", "customer_idx"]
+    if "article_id" in work_df.columns:
+        dup_mask = work_df.duplicated(subset=["target_week", "customer_idx", "article_id"])
+        if bool(dup_mask.any()):
+            raise ValueError(
+                "Duplicate candidate rows detected for the same (target_week, customer_idx, article_id)."
+            )
+        sort_cols.append("article_id")
+
+    sorted_df = work_df.sort_values(sort_cols, kind="mergesort").reset_index(drop=True)
+
+    if drop_all_zero_groups and "label" in sorted_df.columns:
+        pos_sums = sorted_df.groupby(["target_week", "customer_idx"], sort=False)["label"].transform("sum")
+        sorted_df = sorted_df.loc[pos_sums > 0].reset_index(drop=True)
+
+    if len(sorted_df) == 0:
+        return sorted_df, np.zeros(0, dtype=np.int32)
+
+    groups = (
+        sorted_df.groupby(["target_week", "customer_idx"], sort=False)
+        .size()
+        .to_numpy(dtype=np.int32)
+    )
+    if int(groups.sum()) != len(sorted_df):
+        raise RuntimeError(
+            f"Group size sum ({int(groups.sum())}) != number of candidate rows ({len(sorted_df)})."
+        )
+    return sorted_df, groups
+
+
 class UnifiedLGBMRanker:
     """Single LightGBM LambdaRank model used identically in offline evaluation and FastAPI online serving."""
 
@@ -58,18 +108,18 @@ class UnifiedLGBMRanker:
         train_df: pd.DataFrame,
         val_df: pd.DataFrame,
         feature_cols: list[str] | None = None,
+        drop_all_zero_train_groups: bool = False,
     ) -> Any:
-        """Train LightGBM LambdaRank grouped by `customer_idx` (Active Users only)."""
+        """Train LightGBM LambdaRank grouped by `(target_week, customer_idx)` (Active Users only)."""
         import lightgbm as lgb
 
         feats = feature_cols or FEATURE_COLUMNS
         cat_cols = [c for c in CATEGORICAL_FEATURES if c in feats]
 
-        train_sorted = train_df.sort_values("customer_idx").reset_index(drop=True)
-        val_sorted = val_df.sort_values("customer_idx").reset_index(drop=True)
-
-        train_groups = train_sorted.groupby("customer_idx", sort=False).size().to_numpy()
-        val_groups = val_sorted.groupby("customer_idx", sort=False).size().to_numpy()
+        train_sorted, train_groups = prepare_lgbm_query_frame(
+            train_df, drop_all_zero_groups=drop_all_zero_train_groups
+        )
+        val_sorted, val_groups = prepare_lgbm_query_frame(val_df, drop_all_zero_groups=False)
 
         dtrain = lgb.Dataset(
             train_sorted[feats],

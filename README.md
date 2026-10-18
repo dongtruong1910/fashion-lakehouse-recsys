@@ -90,12 +90,15 @@ fashion-lakehouse-recsys/
 
 ### Bước 1: Cài đặt môi trường & Chạy Unit Tests kiểm tra nền tảng
 ```bash
-# Tạo môi trường ảo kế thừa toàn bộ thư viện đã cài ở bản Global (PyTorch CUDA, NumPy, Pandas...)
+# 1. Tạo môi trường ảo kế thừa thư viện Global (giữ nguyên PyTorch CUDA đang có trên máy)
 "C:\Users\Lenovo\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venv --system-site-packages
 # Kích hoạt trên Windows PowerShell: .\.venv\Scripts\Activate.ps1
 # Kích hoạt trên WSL2/Linux: source .venv/bin/activate
 
-# Chạy bộ kiểm thử đơn vị (Unit Tests) cho ID padding, Two-Tower & Metrics (MAP@12, nDCG@10)
+# 2. (Khi cần cài thêm thư viện còn thiếu mà không ghi đè PyTorch CUDA global):
+# .\.venv\Scripts\python.exe -m pip install --no-build-isolation -e .
+
+# 3. Chạy toàn bộ bộ kiểm thử đơn vị (Unit Tests + Regression Tests A01-A20 + Markdown Links)
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 

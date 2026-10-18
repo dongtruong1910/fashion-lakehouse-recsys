@@ -40,6 +40,33 @@ def compose_image_text_vector(
     return blended.astype(np.float32)
 
 
+def get_text_tokenizer_kwargs(model_id: str, spec: dict[str, object] | None = None) -> dict[str, object]:
+    """Return checkpoint-appropriate text tokenization arguments (Finding A17).
+
+    SigLIP / SigLIP-2 models were pretrained with fixed `padding="max_length"` (64 tokens),
+    whereas CLIP models use `padding=True` (or longest in batch, up to 77 tokens).
+    """
+    is_siglip = "siglip" in model_id.lower()
+    default_padding = "max_length" if is_siglip else True
+    default_max_len = 64 if is_siglip else 77
+
+    if spec:
+        cfg_pad = spec.get("text_padding")
+        if cfg_pad == "max_length":
+            default_padding = "max_length"
+        elif cfg_pad == "longest":
+            default_padding = True
+        if "max_text_length" in spec:
+            default_max_len = int(spec["max_text_length"])  # type: ignore[arg-type]
+
+    return {
+        "padding": default_padding,
+        "truncation": True,
+        "max_length": default_max_len,
+        "return_tensors": "pt",
+    }
+
+
 class MultimodalEmbedder:
     """Wrapper for extracting L2-normalized image and text embeddings on RTX 4060 (FP16)."""
 
@@ -81,10 +108,9 @@ class MultimodalEmbedder:
 
         if self._model is None:
             self.load()
+        tok_kwargs = get_text_tokenizer_kwargs(self.model_id, self.spec)
         with torch.inference_mode():
-            inputs = self._processor(
-                text=texts, padding=True, truncation=True, max_length=64, return_tensors="pt"
-            ).to(self.device)
+            inputs = self._processor(text=texts, **tok_kwargs).to(self.device)
             feats = self._model.get_text_features(**inputs)
             feats = feats / feats.norm(p=2, dim=-1, keepdim=True).clamp(min=1e-12)
             return feats.detach().cpu().to(torch.float32).numpy()

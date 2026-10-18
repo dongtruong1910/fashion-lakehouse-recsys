@@ -28,14 +28,26 @@ app = FastAPI(
 
 @app.get("/health")
 def health_check() -> dict[str, Any]:
-    """Return service health and hardware configuration summary."""
+    """Liveness check: confirms the FastAPI process is alive and contracts are loaded (Finding A20)."""
     return {
-        "status": "ok",
-        "version": "0.3.0",
-        "services": {
-            "qdrant": "configured",
-            "redis": "configured",
-            "kafka": "configured",
+        "status": "alive",
+        "version": "0.3.1",
+        "mode": "scaffold",
+        "ready": False,
+    }
+
+
+@app.get("/ready")
+def readiness_check() -> dict[str, Any]:
+    """Readiness check: reports actual connection status of Qdrant, Redis, Kafka, and ONNX/LightGBM models."""
+    return {
+        "ready": False,
+        "version": "0.3.1",
+        "dependencies": {
+            "qdrant": "not_connected",
+            "redis": "not_connected",
+            "kafka": "not_connected",
+            "models_loaded": False,
         },
     }
 
@@ -80,9 +92,10 @@ def recommend_outfit(article_id: str, top_k: int = 6) -> list[ScoredProductItem]
 
 @app.post("/api/v1/events")
 def record_user_event(event: FashionEvent) -> dict[str, Any]:
-    """Ingest user interaction event (`view`, `click`, `add_to_cart`, `purchase`) into Redis session & Kafka."""
+    """Validate user interaction event (`view`, `click`, `add_to_cart`, `purchase`) for Redis & Kafka."""
     return {
-        "status": "accepted",
+        "status": "validated_scaffold",
+        "persisted": False,
         "event_id": event.event_id,
         "customer_id": event.customer_id,
         "article_id": event.article_id,

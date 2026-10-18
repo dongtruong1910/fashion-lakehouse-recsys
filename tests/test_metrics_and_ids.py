@@ -189,6 +189,288 @@ class TestCoreContractsAndMetrics(unittest.TestCase):
             norms = torch.norm(user_vecs, p=2, dim=-1)
             self.assertTrue(torch.allclose(norms, torch.ones_like(norms), atol=1e-5))
 
+    def test_a01_week_calendar_and_temporal_leakage_guard(self) -> None:
+        from src.utils.id_utils import (
+            date_to_hm_week_num,
+            hm_week_num_to_date_range,
+            validate_no_temporal_leakage,
+        )
+
+        # First H&M date 2018-09-20 is in week 0
+        self.assertEqual(date_to_hm_week_num("2018-09-20"), 0)
+        self.assertEqual(date_to_hm_week_num("2020-09-08"), 102)
+
+        # Dev Week 103: all 7 days 2020-09-09 .. 2020-09-15 must map to 103
+        for day in range(9, 16):
+            self.assertEqual(date_to_hm_week_num(f"2020-09-{day:02d}"), 103)
+
+        # Final Test Week 104: all 7 days 2020-09-16 .. 2020-09-22 must map to 104 (fixes A01!)
+        for day in range(16, 23):
+            self.assertEqual(date_to_hm_week_num(f"2020-09-{day:02d}"), 104)
+
+        w104_start, w104_end = hm_week_num_to_date_range(104)
+        self.assertEqual(w104_start.isoformat(), "2020-09-16")
+        self.assertEqual(w104_end.isoformat(), "2020-09-22")
+
+        # Feature cutoff strictly before target week start passes; on/after raises ValueError
+        validate_no_temporal_leakage("2020-09-15", target_week_num=104)
+        with self.assertRaises(ValueError):
+            validate_no_temporal_leakage("2020-09-16", target_week_num=104)
+
+    def test_a02_lgbm_multi_week_query_grouping(self) -> None:
+        import pandas as pd
+
+        from src.recsys.lgbm_ranker import prepare_lgbm_query_frame
+
+        # Same customer_idx=7 across two target weeks (101 and 102), 2 candidates each -> groups must be [2, 2], NOT [4]
+        df = pd.DataFrame(
+            {
+                "target_week": [101, 102, 101, 102],
+                "customer_idx": [7, 7, 7, 7],
+                "article_id": ["0108775015", "0108775015", "0108775044", "0108775044"],
+                "label": [1, 0, 0, 1],
+            }
+        )
+        sorted_df, groups = prepare_lgbm_query_frame(df)
+        self.assertEqual(groups.tolist(), [2, 2])
+        self.assertEqual(int(groups.sum()), len(sorted_df))
+
+        # Duplicate (target_week, customer_idx, article_id) must raise ValueError
+        dup_df = pd.concat([df, df.iloc[[0]]], ignore_index=True)
+        with self.assertRaises(ValueError):
+            prepare_lgbm_query_frame(dup_df)
+
+    def test_a03_smoke_path_isolation(self) -> None:
+        from spark_jobs.batch.b0_ingest_bronze import resolve_bronze_output_path
+        from spark_jobs.batch.b1_clean_silver import resolve_silver_io_paths
+
+        paths = get_paths_config()
+        prod_tx = paths["lakehouse"]["bronze"]["transactions"]
+        smoke_tx = resolve_bronze_output_path(paths, smoke_test=True)
+        self.assertNotEqual(smoke_tx, prod_tx)
+        self.assertIn("lakehouse_smoke", smoke_tx)
+
+        # Attempting to force smoke run onto production path must raise ValueError
+        with self.assertRaises(ValueError):
+            resolve_bronze_output_path(paths, smoke_test=True, output_override=prod_tx)
+
+        silver_smoke = resolve_silver_io_paths(paths, smoke_test=True)
+        silver_full = resolve_silver_io_paths(paths, smoke_test=False)
+        self.assertNotEqual(silver_smoke["silver_tx"], silver_full["silver_tx"])
+        self.assertEqual(silver_smoke["mapping_version"], "v1_smoke")
+        self.assertEqual(silver_full["mapping_version"], "v1_full")
+
+    def test_a04_detector_ontology_guard(self) -> None:
+        from src.cv.detector import resolve_detector_class_from_model_names
+
+        fashion12 = {int(k): v for k, v in get_class_mapping_config()["detector_classes"].items()}
+        # COCO checkpoint where 0='person' must be rejected, never mapped to 'top'
+        coco_names = {0: "person", 26: "handbag"}
+        with self.assertRaises(RuntimeError):
+            resolve_detector_class_from_model_names(0, coco_names, fashion12)
+
+        # Valid fashion12 checkpoint maps cleanly
+        self.assertEqual(resolve_detector_class_from_model_names(0, fashion12, fashion12), "top")
+        self.assertEqual(resolve_detector_class_from_model_names(6, fashion12, fashion12), "shoe")
+
+    def test_a05_and_a19_two_tower_empty_history_and_order_sensitivity(self) -> None:
+        import torch
+
+        from src.recsys.two_tower import ItemTower, UserTower
+
+        torch.manual_seed(42)
+        itower = ItemTower(
+            num_items=20,
+            visual_embeddings=torch.randn(21, 768),
+            embed_dim=64,
+            mode="id_meta_visual",
+        )
+        utower = UserTower(embed_dim=64)
+        itower.eval()
+        utower.eval()
+
+        # Row 0: completely empty history (all padded=True). Row 1: valid history [1, 2, 3].
+        item_idx = torch.tensor([[0, 0, 0], [1, 2, 3]], dtype=torch.long)
+        ptype_idx = torch.tensor([[0, 0, 0], [1, 2, 3]], dtype=torch.long)
+        colour_idx = torch.tensor([[0, 0, 0], [1, 2, 3]], dtype=torch.long)
+        pad_mask = item_idx == 0
+        age_idx = torch.tensor([1, 2], dtype=torch.long)
+
+        hist_vecs = itower(item_idx, ptype_idx, colour_idx)
+        user_vecs = utower(hist_vecs, pad_mask, age_idx)
+
+        # Must be 100% finite (0 NaNs) and unit-normalized even for empty history!
+        self.assertTrue(bool(torch.isfinite(user_vecs).all()))
+        norms = torch.norm(user_vecs, p=2, dim=-1)
+        self.assertTrue(torch.allclose(norms, torch.ones_like(norms), atol=1e-5))
+
+        # Order/recency sensitivity check (Finding A19): [1, 2, 3] vs reversed [3, 2, 1] must differ!
+        rev_idx = torch.tensor([[3, 2, 1]], dtype=torch.long)
+        fwd_idx = torch.tensor([[1, 2, 3]], dtype=torch.long)
+        v_fwd = utower(
+            itower(fwd_idx, ptype_idx[1:], colour_idx[1:]),
+            fwd_idx == 0,
+            age_idx[1:],
+        )
+        v_rev = utower(
+            itower(rev_idx, ptype_idx[1:], colour_idx[1:]),
+            rev_idx == 0,
+            age_idx[1:],
+        )
+        max_diff = float(torch.max(torch.abs(v_fwd - v_rev)).item())
+        self.assertGreater(max_diff, 1e-3)
+
+    def test_a06_and_a08_strict_schema_validation_and_replay_clock(self) -> None:
+        # Invalid UUID, NaN price, invalid event_type, or arbitrary customer_id='x' must raise ValueError
+        with self.assertRaises(ValueError):
+            FashionEvent(
+                event_id="not-a-uuid",
+                event_time="2026-10-17T08:30:00Z",
+                ingest_time="2026-10-17T08:30:00Z",
+                customer_id="cust_demo",
+                article_id="0108775015",
+            )
+        with self.assertRaises(ValueError):
+            FashionEvent(
+                event_id="550e8400-e29b-41d4-a716-446655440000",
+                event_time="2026-10-17T08:30:00Z",
+                ingest_time="2026-10-17T08:30:00Z",
+                customer_id="x",
+                article_id="0108775015",
+            )
+        with self.assertRaises(ValueError):
+            FashionEvent(
+                event_id="550e8400-e29b-41d4-a716-446655440000",
+                event_time="2026-10-17T08:30:00Z",
+                ingest_time="2026-10-17T08:30:00Z",
+                customer_id="cust_demo",
+                article_id="0108775015",
+                price=float("nan"),
+            )
+
+        # QdrantProductPayload with mismatched product_code prefix must raise ValueError
+        with self.assertRaises(ValueError):
+            QdrantProductPayload(
+                article_id="0108775015",
+                product_code="9999999",
+                prod_name="Strap top",
+                detector_class="top",
+                product_type_name="Vest top",
+                product_group_name="Garment Upper body",
+                colour_group_name="Black",
+                graphical_appearance_name="Solid",
+                index_group_name="Ladieswear",
+            )
+
+        # Replay event uses active UTC clock for event_time and preserves original_t_dat (Finding A08)
+        hex64 = "000058a12d5b43e67d225668fa1f8d618c13dc232df0cad8ffe7ad4a1091e318"
+        ev_replay = build_fashion_event(
+            customer_id=hex64, article_id=108775015, date_str="2020-09-18", source="replay"
+        )
+        self.assertEqual(ev_replay.original_t_dat, "2020-09-18")
+        self.assertEqual(ev_replay.event_time, ev_replay.ingest_time)
+
+    def test_a09_a16_a17_a18_and_kappa_edge_cases(self) -> None:
+        import math
+
+        from spark_jobs.streaming.s1_stream_processor import record_session_event_idempotent
+        from src.cv.embedder import get_text_tokenizer_kwargs
+        from src.cv.qdrant_indexer import validate_existing_collection_params
+        from src.metrics.cv_metrics import cohens_kappa_summary, i2i_precision_at_k
+
+        # A18: One-shot iterator ground truth in candidate_recall_at_k and map_at_k must equal list ground truth
+        self.assertAlmostEqual(
+            candidate_recall_at_k({"u": iter(["0108775015"])}, {"u": ["0108775015"]}, k=10),
+            1.0,
+            places=6,
+        )
+        self.assertAlmostEqual(
+            map_at_k({"u": iter(["0108775015"])}, {"u": ["0108775015"]}, k=12),
+            1.0,
+            places=6,
+        )
+
+        # Section 5.1: Degenerate zero-variance Cohen's Kappa returns NaN & undefined_zero_variance status
+        self.assertTrue(math.isnan(cohens_kappa_score([3, 3, 3], [3, 3, 3])))
+        summary = cohens_kappa_summary([3, 3, 3], [3, 3, 3])
+        self.assertEqual(summary["status"], "undefined_zero_variance")
+        self.assertAlmostEqual(float(summary["observed_agreement"]), 1.0, places=6)
+
+        # A11: I2I Precision@K excludes the query article itself
+        p_i2i = i2i_precision_at_k(
+            query_article_id="0108775015",
+            retrieved_article_ids=["0108775015", "0108775044", "0706016001"],
+            relevant_article_ids={"0108775015", "0108775044"},
+            k=2,
+        )
+        self.assertAlmostEqual(p_i2i, 0.5, places=6)
+
+        # A17: SigLIP uses padding='max_length', max_length=64
+        siglip_kw = get_text_tokenizer_kwargs("google/siglip2-base-patch16-224")
+        self.assertEqual(siglip_kw["padding"], "max_length")
+        self.assertEqual(siglip_kw["max_length"], 64)
+
+        # A16: Qdrant dimension mismatch raises ValueError
+        with self.assertRaises(ValueError):
+            validate_existing_collection_params(
+                {"visual_emb": {"size": 512}, "two_tower_emb": {"size": 64}},
+                visual_dim=768,
+                two_tower_dim=64,
+            )
+
+        # A09: Idempotent Redis session helper deduplicates duplicate event_id
+        class _FakePipeline:
+            def __init__(self, store: dict) -> None:
+                self.store = store
+                self.ops: list = []
+
+            def lpush(self, k: str, v: str) -> None:
+                self.ops.append(("lpush", k, v))
+
+            def ltrim(self, k: str, start: int, end: int) -> None:
+                self.ops.append(("ltrim", k, start, end))
+
+            def expire(self, k: str, ttl: int) -> None:
+                self.ops.append(("expire", k, ttl))
+
+            def execute(self) -> None:
+                for op in self.ops:
+                    if op[0] == "lpush":
+                        self.store.setdefault(op[1], []).insert(0, op[2])
+                    elif op[0] == "ltrim":
+                        self.store[op[1]] = self.store.get(op[1], [])[op[2] : op[3] + 1]
+
+        class _FakeRedis:
+            def __init__(self) -> None:
+                self.seen: set[str] = set()
+                self.lists: dict[str, list[str]] = {}
+
+            def set(self, key: str, val: str, nx: bool = False, ex: int = 0) -> bool:
+                if nx and key in self.seen:
+                    return False
+                self.seen.add(key)
+                return True
+
+            def pipeline(self, transaction: bool = True) -> _FakePipeline:
+                return _FakePipeline(self.lists)
+
+        fake_r = _FakeRedis()
+        first = record_session_event_idempotent(
+            fake_r,
+            event_id="550e8400-e29b-41d4-a716-446655440000",
+            customer_id="cust_demo",
+            article_id=108775015,
+        )
+        second = record_session_event_idempotent(
+            fake_r,
+            event_id="550e8400-e29b-41d4-a716-446655440000",
+            customer_id="cust_demo",
+            article_id=108775015,
+        )
+        self.assertTrue(first)
+        self.assertFalse(second)
+        self.assertEqual(fake_r.lists["user:cust_demo:recent"], ["0108775015"])
+
 
 if __name__ == "__main__":
     unittest.main()

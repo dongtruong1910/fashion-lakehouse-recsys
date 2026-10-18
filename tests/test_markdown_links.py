@@ -86,6 +86,19 @@ def test_all_relative_links_resolve():
     print(f"PASS: All {total_checked} relative markdown links successfully resolve to existing files/folders!")
 
 
+import unittest
+
+
+class TestMarkdownLinks(unittest.TestCase):
+    """Unittest wrapper so `python -m unittest discover -s tests -v` runs Markdown link checks (Section 5.7)."""
+
+    def test_markdown_no_file_uri(self) -> None:
+        test_no_file_uri_in_markdown()
+
+    def test_markdown_all_relative_links_resolve(self) -> None:
+        test_all_relative_links_resolve()
+
+
 if __name__ == "__main__":
     try:
         test_no_file_uri_in_markdown()

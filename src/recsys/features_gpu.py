@@ -67,12 +67,18 @@ def compute_visual_affinity_batch_numpy_or_torch(
 
             return out
     except ImportError:
-        # Pure NumPy fallback if PyTorch is not installed in the current environment
+        # Chunked NumPy fallback so 7M x D pairs never materialize a ~21.5 GB array at once (Finding A13)
         hist_vecs = item_embeddings[user_recent_item_indices] * user_recent_mask[..., None]
         user_mean = hist_vecs.sum(axis=1)
         norms = np.linalg.norm(user_mean, axis=-1, keepdims=True)
         valid = (user_recent_mask.sum(axis=1, keepdims=True) > 0).astype(np.float32)
-        user_mean = (user_mean / np.maximum(norms, 1e-12)) * valid
-        return np.sum(
-            user_mean[candidate_user_rows] * item_embeddings[candidate_item_indices], axis=-1
-        ).astype(np.float32)
+        user_mean = ((user_mean / np.maximum(norms, 1e-12)) * valid).astype(np.float32)
+
+        n_pairs = len(candidate_user_rows)
+        out = np.zeros(n_pairs, dtype=np.float32)
+        for start in range(0, n_pairs, batch_size):
+            end = min(start + batch_size, n_pairs)
+            u_idx = candidate_user_rows[start:end]
+            i_idx = candidate_item_indices[start:end]
+            out[start:end] = np.sum(user_mean[u_idx] * item_embeddings[i_idx], axis=-1)
+        return out

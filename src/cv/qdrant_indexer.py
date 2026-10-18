@@ -9,6 +9,34 @@ from src.contracts.schemas import QdrantProductPayload
 from src.utils.id_utils import article_id_to_qdrant_point_id
 
 
+def validate_existing_collection_params(
+    vectors_cfg: dict[str, Any],
+    visual_dim: int = 768,
+    two_tower_dim: int = 64,
+) -> None:
+    """Verify that an existing Qdrant collection's named vectors match expected dimensions and metrics (A16)."""
+    if "visual_emb" not in vectors_cfg or "two_tower_emb" not in vectors_cfg:
+        raise ValueError(
+            f"Existing Qdrant collection is missing required named vectors ('visual_emb', 'two_tower_emb'): "
+            f"found {list(vectors_cfg.keys())}."
+        )
+    vis_param = vectors_cfg["visual_emb"]
+    tt_param = vectors_cfg["two_tower_emb"]
+
+    vis_size = int(getattr(vis_param, "size", vis_param.get("size") if isinstance(vis_param, dict) else -1))
+    tt_size = int(getattr(tt_param, "size", tt_param.get("size") if isinstance(tt_param, dict) else -1))
+    if vis_size != int(visual_dim):
+        raise ValueError(
+            f"Qdrant collection dimension mismatch (Finding A16): existing visual_emb.size={vis_size} "
+            f"!= requested visual_dim={visual_dim}. Recreate or version the collection for the new encoder."
+        )
+    if tt_size != int(two_tower_dim):
+        raise ValueError(
+            f"Qdrant collection dimension mismatch (Finding A16): existing two_tower_emb.size={tt_size} "
+            f"!= requested two_tower_dim={two_tower_dim}."
+        )
+
+
 class QdrantCatalogStore:
     """Manages the `hm_products` Qdrant collection with dual named vectors (`visual_emb`, `two_tower_emb`)."""
 
@@ -37,11 +65,21 @@ class QdrantCatalogStore:
         two_tower_dim: int = 64,
         enable_int8_quantization: bool = True,
     ) -> None:
-        """Create `hm_products` collection with named vectors and payload indexes if it does not exist."""
+        """Create `hm_products` collection with named vectors and payload indexes, or verify existing compatibility."""
         from qdrant_client.http import models as qmodels
 
         existing = [c.name for c in self.client.get_collections().collections]
         if self.collection_name in existing:
+            info = self.client.get_collection(self.collection_name)
+            vec_cfg = info.config.params.vectors
+            if isinstance(vec_cfg, dict):
+                validate_existing_collection_params(
+                    vec_cfg, visual_dim=visual_dim, two_tower_dim=two_tower_dim
+                )
+            else:
+                raise ValueError(
+                    f"Existing Qdrant collection '{self.collection_name}' does not use Named Vectors."
+                )
             return
 
         quant_cfg = (
@@ -74,6 +112,7 @@ class QdrantCatalogStore:
             "product_type_name",
             "colour_group_name",
             "index_group_name",
+            "encoder_model_id",
         ):
             self.client.create_payload_index(
                 collection_name=self.collection_name,

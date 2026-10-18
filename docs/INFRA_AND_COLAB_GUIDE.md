@@ -16,21 +16,22 @@
   * RTX 4060 có cùng kiến trúc **Ada Lovelace** với GPU L4 trên Colab, hỗ trợ phần cứng cho **FP16, BF16, INT8 và TensorRT** cực mạnh, và đặc biệt là **tốn 0 CU**.
   * Do đó, **90% thời gian phát triển, xử lý dữ liệu Big Data, trích xuất vector và chạy hệ thống hoàn toàn nằm trên Laptop**.
 
-### 1.2. Bảng Phân công Tác vụ: Local Laptop vs. Colab Pro+
+### 1.2. Bảng Phân công Tác vụ & Dự toán Ngân sách: Local Laptop vs. Colab Pro+
+*(Lưu ý: Thời gian và chi phí CU dưới đây là **dự toán thiết kế ban đầu**; số liệu thực tế sẽ được ghi nhận vào `reports/tables/` khi chạy từng Task).*
 
-| Tác vụ | Chạy ở đâu? | Cấu hình đề xuất | Thời gian dự kiến | Chi phí CU | Lý do kỹ thuật |
+| Tác vụ | Chạy ở đâu? | Cấu hình đề xuất | Thời gian dự kiến | Dự toán CU | Lý do kỹ thuật |
 | :--- | :--- | :--- | :---: | :---: | :--- |
-| **1. Tải & Resize bộ ảnh H&M gốc** *(nếu bản 256 bị méo tỉ lệ)* | **Colab Pro+** | **CPU Runtime** | ~30–45 phút | **~0.5 CU** | Mạng nội bộ Google tải từ Kaggle tốc độ 300MB/s (không tốn băng thông nhà bạn), nén lại thành file `.zip` chuẩn tỉ lệ lưu vào Google Drive. |
+| **1. Tải & Resize bộ ảnh H&M gốc** *(nếu bản 256 bị méo tỉ lệ)* | **Colab Pro+** | **CPU Runtime** | ~30–45 phút | **~0.5 CU** | Mạng nội bộ Google tải từ Kaggle tốc độ cao, nén lại thành file `.tar`/`.zip` chuẩn tỉ lệ lưu vào Google Drive. |
 | **2. Viết code, Debug & Smoke Test (200 mẫu)** | **Laptop 4060** | Local GPU/CPU | Liên tục | **0 CU** | Tuyệt đối không mở GPU Colab để ngồi gõ code hay sửa lỗi cú pháp. |
-| **3. Benchmark 3 model Zero-shot trên 105K ảnh** | **Laptop 4060** | Local GPU (FP16, batch 128) | ~6–10 phút / model | **0 CU** | Inference ở chế độ `torch.inference_mode()` + `fp16` chỉ tốn ~1.5GB VRAM. |
-| **4. Huấn luyện Detector `YOLO11m` trên Fashionpedia (~45.6K ảnh)** | **Colab Pro+** | **L4 GPU (24GB)** | ~4–6 giờ | **~12–18 CU** | Train 50–80 epochs trên 45.6K ảnh với `batch=32, imgsz=640` trên L4 nhanh gấp 3 lần laptop và không làm nóng máy cá nhân. |
-| **5. Fine-tune `SigLIP-2` / `CLIP` với LoRA** *(nếu qua Gate CV-1)* | **Colab Pro+** | **L4 GPU (24GB)** | ~1.5–2.5 giờ | **~5–8 CU** | Contrastive Loss (InfoNCE / Sigmoid) cần **batch size lớn (256–512)** để có nhiều negative samples trong batch $\rightarrow$ cần 24GB VRAM của L4. |
-| **6. Toàn bộ PySpark Batch (`B0` $\rightarrow$ `B8`), ALS, LightGBM** | **Laptop CPU** | WSL2 (12–16GB RAM) | ~3–10 phút / job | **0 CU** | Đã tối ưu lọc `Active Users` (~70K khách/tuần $\rightarrow$ 7M dòng), chạy cực nhẹ trên CPU laptop. |
-| **7. Tính Feature `Visual Affinity` (7M cặp)** | **Laptop 4060** | Local GPU (PyTorch) | **< 5 giây** | **0 CU** | Ma trận vector ảnh chỉ nặng 162MB, nhân ma trận trên RTX 4060 mất vài giây. |
-| **8. Huấn luyện mạng `Two-Tower Neural Retrieval`** | **Laptop 4060** | Local GPU (FP16) | ~10–15 phút | **0 CU** | Đầu vào là vector ảnh đã đóng băng + ID embedding $\rightarrow$ chỉ tốn ~2.5GB VRAM. |
-| **9. Serving (FastAPI + Qdrant + Redis + Kafka + UI)** | **Laptop 4060** | Docker + Local | Realtime | **0 CU** | Toàn bộ hệ thống demo chạy cục bộ, độ trễ < 100ms, không phụ thuộc mạng ngoài. |
+| **3. Benchmark Zero-shot trên 105K ảnh** | **Laptop 4060** | Local GPU (FP16, batch 128) | ~6–12 phút / model | **0 CU** | Inference ở chế độ `torch.inference_mode()` + `fp16` nằm gọn trong ngân sách 8GB VRAM. |
+| **4. Huấn luyện Detector `YOLO11m` trên Fashionpedia (~45.6K ảnh)** | **Colab Pro+** | **L4 GPU (24GB)** | ~4–6 giờ | **~12–18 CU** | Train 50–60 epochs trên 45.6K ảnh với `batch=32, imgsz=640` trên L4 nhanh hơn và giảm tải nhiệt cho laptop. |
+| **5. Fine-tune `SigLIP-2` / `CLIP` với LoRA** *(nếu qua Gate CV-1)* | **Colab Pro+** | **L4 GPU (24GB)** | ~1.5–2.5 giờ | **~5–8 CU** | Contrastive Loss cần batch size lớn (256–512) trên 24GB VRAM của L4. |
+| **6. Toàn bộ PySpark Batch (`B0` $\rightarrow$ `B8`), ALS, LightGBM** | **Laptop CPU** | WSL2 (12–16GB RAM) | ~3–10 phút / job | **0 CU** | Đã tối ưu lọc `Active Users` (~70K khách/tuần $\rightarrow$ ~7M dòng). |
+| **7. Tính Feature `Visual Affinity` (7M cặp)** | **Laptop 4060** | Local GPU / Batch CPU | **Vài giây / batch** | **0 CU** | Chia mini-batch (`batch_size = 262.144`) trong `src/recsys/features_gpu.py` để không bao giờ cấp phát 7M $\times$ 768 cùng lúc. |
+| **8. Huấn luyện mạng `Two-Tower Neural Retrieval`** | **Laptop 4060** | Local GPU (FP16) | ~10–15 phút | **0 CU** | Đầu vào là vector ảnh đóng băng + ID embedding, mục tiêu VRAM $\le 3.5\text{ GB}$. |
+| **9. Serving (FastAPI + Qdrant + Redis + Kafka + UI)** | **Laptop 4060** | Docker + Local | Realtime | **0 CU** | Toàn bộ hệ thống demo chạy cục bộ, mục tiêu độ trễ p95 < 150ms. |
 
-> **Tổng ngân sách tiêu thụ dự kiến cả kỳ:** Chỉ khoảng **25 – 45 CU** (kể cả chạy lại 2–3 lần vẫn chưa hết 100 CU trên tổng số 200 CU bạn có!).
+> **Tổng ngân sách tiêu thụ dự kiến cả kỳ:** Khoảng **25 – 45 CU** trên tổng số 200 CU hiện có.
 
 ---
 
@@ -38,37 +39,37 @@
 
 Đây là rủi ro rất phổ biến khi sinh viên train model trên GPU 24GB/40GB của Colab rồi mang về máy cá nhân 8GB VRAM (nơi phải chạy cùng lúc cả hệ điều hành Windows, trình duyệt, Docker, Qdrant, Spark và FastAPI).
 
-Để **ĐẢM BẢO 100% không bao giờ xảy ra tình trạng model quá lớn không chạy được trên Laptop RTX 4060**, dự án áp dụng **5 Lớp Phòng Vệ Kỹ Thuật (5-Layer Model Fitting Strategy)**:
+Để kiểm soát chặt chẽ kích thước model trên Laptop RTX 4060, dự án áp dụng **5 Lớp Phòng Vệ Kỹ Thuật (5-Layer Model Fitting Strategy)**:
 
 ### Lớp 1: Chốt kích thước Backbone "Vừa vặn" ngay từ thiết kế (Right-Sizing Architecture)
-* Không bao giờ chọn các backbone khổng lồ mang tính phô trương nhưng không tăng nhiều độ chính xác trên H&M như `ViT-Huge`, `SigLIP-SO400M`, `EVA-02-Large` hay `YOLO11x`.
-* Trong [`configs/model_config.yaml`](../configs/model_config.yaml), chúng ta khóa cứng kích thước mô hình ở ngưỡng tối ưu cho RTX 4060:
+* Không chọn các backbone khổng lồ như `ViT-Huge`, `SigLIP-SO400M`, `EVA-02-Large` hay `YOLO11x`.
+* Trong [`configs/model_config.yaml`](../configs/model_config.yaml), chúng ta khóa kích thước mô hình ở ngưỡng phù hợp cho RTX 4060:
   * **Detector:** `YOLO11s` (9.4M params) hoặc `YOLO11m` (20.1M params).
   * **Multimodal Encoder:** `SigLIP-2 Base (ViT-B/16)` hoặc `CLIP ViT-B/32` (~86M params cho nhánh ảnh, ~65M params cho nhánh text).
   * **Two-Tower User Encoder:** MLP + 1 lớp Attention nhẹ (~2M params).
-  * **Ranker:** `LightGBM` (chạy trên CPU, ~15MB).
+  * **Ranker:** `LightGBM` (Native C++ Booster chạy trên CPU).
 
-### Lớp 2: Gộp LoRA + Cắt bỏ Optimizer State + Xuất sang ONNX FP16/INT8 ngay trên Colab
-* **Tại sao file checkpoint trên Colab thường rất nặng?**
-  Khi đang train bằng `AdamW`, file `.pt` lưu cả: (1) Trọng số gốc `FP32` (4 bytes/param), (2) Граdient `FP32`, (3) Momentum state `FP32` và (4) Variance state `FP32` $\rightarrow$ dung lượng phình gấp **4 lần**!
-* **Quy trình bắt buộc ở bước cuối trên Colab (trước khi tải về máy cá nhân):**
-  1. Nếu dùng LoRA: Gọi `model = model.merge_and_unload()` để cộng thẳng ma trận LoRA $\Delta W = B \cdot A$ vào trọng số gốc $W_0$ (nhờ đó khi chạy ở máy cá nhân không tốn thêm bất kỳ phép nhân ma trận phụ nào).
-  2. Chuyển sang chế độ `model.eval().half()` (**FP16** — giảm ngay 50% dung lượng và VRAM).
-  3. Xuất thẳng ra định dạng **ONNX Runtime (`.onnx` FP16)** hoặc **INT8 Quantization** bằng script [`src/cv/export_onnx.py`](../src/cv/export_onnx.py).
+### Lớp 2: Gộp LoRA + Cắt bỏ Optimizer State + Xuất sang ONNX ngay trên Colab
+* **Tại sao file checkpoint khi đang train thường nặng?**
+  Khi đang train bằng `AdamW`, file `.pt` lưu cả: (1) Trọng số gốc `FP32`, (2) Gradient `FP32`, (3) Momentum state `FP32` và (4) Variance state `FP32` $\rightarrow$ dung lượng phình gấp **4 lần**.
+* **Quy trình ở bước cuối trên Colab (trước khi tải về máy cá nhân):**
+  1. Nếu dùng LoRA: Gọi `model = model.merge_and_unload()` để cộng thẳng ma trận LoRA $\Delta W = B \cdot A$ vào trọng số gốc $W_0$.
+  2. Xuất nhánh Detector và Vision Encoder sang **ONNX FP16** (chạy trên GPU `CUDAExecutionProvider`), còn nhánh Text Encoder / User Tower xuất sang **ONNX FP32/INT8** (chạy trên CPU `CPUExecutionProvider` để tránh lỗi thiếu op FP16 trên CPU).
 
-**Bảng tính toán VRAM thực tế khi chạy đồng thời TẤT CẢ các mô hình trong FastAPI trên RTX 4060 (8.192 MB VRAM):**
+**Bảng Ngân sách VRAM & Độ trễ Mục tiêu (Design Budget) khi chạy đồng thời các mô hình trong FastAPI trên RTX 4060 (8.192 MB VRAM):**
+*(Sẽ được đo kiểm thực tế và lưu vào `reports/tables/serving_latency.json` ở `TASK-SRV-01`)*
 
-| Mô hình trong FastAPI | Định dạng khi chạy Local | Thiết bị | VRAM tiêu thụ | Độ trễ 1 lần gọi |
+| Mô hình trong FastAPI | Định dạng & Provider mục tiêu | Thiết bị | Ngân sách VRAM ước tính | Mục tiêu độ trễ 1 lần gọi |
 | :--- | :--- | :---: | :---: | :---: |
-| `YOLO11m` (12 lớp thời trang) | ONNX Runtime (`FP16`) | **GPU (RTX 4060)** | **~180 MB** | ~8 – 15 ms |
-| `SigLIP-2 / CLIP Vision Encoder` | ONNX Runtime (`FP16`) | **GPU (RTX 4060)** | **~260 MB** | ~6 – 12 ms |
-| `SigLIP-2 / CLIP Text Encoder` | ONNX Runtime (`FP16` / `INT8`) | **CPU hoặc GPU** | **~0 – 180 MB** | ~5 – 10 ms |
-| `Two-Tower User Tower` | ONNX Runtime (`FP32`) | **CPU** | **0 MB VRAM** | ~1 – 2 ms |
+| `YOLO11m` (12 lớp thời trang) | ONNX Runtime (`FP16`, CUDA) | **GPU (RTX 4060)** | **~180 – 250 MB** | ~8 – 15 ms |
+| `SigLIP-2 / CLIP Vision Encoder` | ONNX Runtime (`FP16`, CUDA) | **GPU (RTX 4060)** | **~260 – 350 MB** | ~6 – 12 ms |
+| `SigLIP-2 / CLIP Text Encoder` | ONNX Runtime (`FP32` / `INT8`, CPU) | **CPU** | **0 MB VRAM** | ~5 – 12 ms |
+| `Two-Tower User Tower` | ONNX Runtime (`FP32`, CPU) | **CPU** | **0 MB VRAM** | ~1 – 3 ms |
 | `LightGBM LambdaRank` | Native C++ Booster | **CPU** | **0 MB VRAM** | ~3 – 5 ms |
-| CUDA Context & Buffer Overhead | — | **GPU (RTX 4060)** | **~450 MB** | — |
-| **TỔNG CỘNG TOÀN BỘ BACKEND** | | | **~900 MB – 1.1 GB VRAM** | **< 45 ms tổng** |
+| CUDA Context & Buffer Overhead | — | **GPU (RTX 4060)** | **~450 – 600 MB** | — |
+| **TỔNG NGÂN SÁCH BACKEND** | | | **Mục tiêu $\le$ 1.5 GB VRAM** | **Mục tiêu p95 < 150 ms** |
 
-> **Kết luận:** Toàn bộ dàn model AI khi chạy ở chuẩn ONNX FP16 chỉ chiếm **~1.1 GB trên tổng số 8.0 GB VRAM** của RTX 4060! Bạn còn dư gần **7 GB VRAM** hoàn toàn thoải mái.
+> **Kết luận:** Với chính sách đặt Detector + Vision Encoder (FP16) trên GPU và đặt Text Encoder + User Tower + LightGBM (FP32) trên CPU, toàn bộ backend được thiết kế để nằm gọn trong ngân sách **$\le 1.5\text{ GB}$ trên tổng số $8.0\text{ GB}$ VRAM** của RTX 4060.
 
 ### Lớp 3: Tách Thiết bị Thông minh (Smart Device Placement: GPU vs. CPU)
 * Trên máy cá nhân, bạn có **CPU đa nhân + 24GB RAM** rất khỏe.

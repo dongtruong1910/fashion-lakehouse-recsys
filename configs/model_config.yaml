@@ -2,24 +2,37 @@
 seed: 42
 
 cv:
-  # 3 ứng viên Zero-shot cho bước Benchmark ở WP-1 (TASK-CV-02)
+  # Ứng viên Zero-shot cho bước Benchmark ở WP-1 (TASK-CV-02)
   zeroshot_candidates:
     clip_b32:
       provider: "transformers"
       model_id: "openai/clip-vit-base-patch32"
       embed_dim: 512
       image_size: 224
+      text_padding: "longest"
+      max_text_length: 77
     siglip2_base:
       provider: "transformers"
       model_id: "google/siglip2-base-patch16-224"
       embed_dim: 768
       image_size: 224
       multilingual: true
+      text_padding: "max_length"
+      max_text_length: 64
+    fashion_siglip:
+      provider: "transformers"
+      model_id: "Marqo/marqo-fashionSigLIP"
+      embed_dim: 768
+      image_size: 224
+      text_padding: "max_length"
+      max_text_length: 64
     fashion_clip:
       provider: "transformers"
       model_id: "patrickjohncyh/fashion-clip"
       embed_dim: 512
       image_size: 224
+      text_padding: "longest"
+      max_text_length: 77
 
   active_encoder: "siglip2_base"
   batch_size_inference: 128
