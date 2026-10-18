@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-17",
+  "timestamp_utc": "2026-10-17 13:37:19 UTC",
+  "timezone": "Asia/Bangkok",
+  "seed": 42,
+  "scope": "Code and canonical documentation audit; no implementation fixes, installations, service startup, dataset/model downloads or full ML jobs.",
+  "verdict": "Scaffold with useful architecture direction; not ready for full-data runs or independent subsystem implementation until core correctness and contract issues are resolved.",
+  "baseline_git_head": "7da8232",
+  "pre_existing_changes": [
+    "docs/MASTER_PLAN.md (one trailing blank line; preserved)"
+  ],
+  "verification": {
+    "unittest": {
+      "command": ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v",
+      "status": "PASS",
+      "tests": 6,
+      "elapsed_seconds": 11.413
+    },
+    "markdown_links_before_review_docs": {
+      "command": ".\\.venv\\Scripts\\python.exe tests/test_markdown_links.py",
+      "status": "PASS",
+      "files": 13,
+      "links": 61
+    },
+    "pytest": {
+      "command": ".\\.venv\\Scripts\\python.exe -m pytest tests/",
+      "status": "UNAVAILABLE",
+      "reason": "No module named pytest"
+    },
+    "compose_config": {
+      "command": "docker compose config --quiet",
+      "exit_code": 0,
+      "limitation": "Only configuration parsing checked; Docker emitted access-denied warnings reading user config. No services started."
+    },
+    "syntax": {
+      "method": "ast.parse over src, spark_jobs, scripts and tests",
+      "status": "PASS",
+      "files": 37
+    },
+    "runtime_limits": [
+      "No raw dataset present at data/raw.",
+      "reports/tables contained only .gitkeep before audit.",
+      "No FastAPI, Spark, LightGBM, Transformers, Qdrant or ONNX inference integration run.",
+      "Mock-based probes verify wrapper behavior, not third-party backend execution.",
+      "Source inspection is distinguished from execution below."
+    ],
+    "markdown_links_after_review_docs": {
+      "command": ".\\.venv\\Scripts\\python.exe tests/test_markdown_links.py",
+      "status": "PASS",
+      "files": 13,
+      "links": 66
+    }
+  },
+  "findings": [
+    {
+      "id": "A01",
+      "priority": "P1",
+      "kind": "reproduced_arithmetic",
+      "title": "Validation-week boundary is wrong",
+      "locations": [
+        "spark_jobs/batch/b1_clean_silver.py:32-36",
+        "configs/paths.yaml:15-19",
+        "docs/DATA_CONTRACTS.md:16"
+      ],
+      "evidence": "floor((t_dat - 2018-09-20)/7) assigns 2020-09-16 to 103 and 2020-09-17..22 to 104. Week-based train/validation filters would include the first validation day in train week 103.",
+      "recommendation": "Define one date-to-week function anchored to the specified validation interval; test every boundary and filter features by explicit cutoff date.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A02",
+      "priority": "P1",
+      "kind": "reproduced_mock",
+      "title": "LambdaRank groups merge independent prediction weeks",
+      "locations": [
+        "src/recsys/lgbm_ranker.py:68-72",
+        "docs/DATA_CONTRACTS.md:69-70"
+      ],
+      "evidence": "Captured Dataset groups are [4] for one user with two candidates in each of weeks 101 and 102; correct query lengths are [2,2]. LightGBM itself was replaced by a capturing stub.",
+      "recommendation": "Sort and group by (target_week, customer_idx); enforce unique (week,user,item) rows and contiguous query groups.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A03",
+      "priority": "P1",
+      "kind": "source_inspection",
+      "title": "Smoke ingestion overwrites the main Bronze table",
+      "locations": [
+        "spark_jobs/batch/b0_ingest_bronze.py:31-39",
+        "spark_jobs/batch/b0_ingest_bronze.py:45-48"
+      ],
+      "evidence": "--smoke-test limits input to 5000 rows but writes mode overwrite to the same lakehouse.bronze.transactions path as a full run.",
+      "recommendation": "Use a dedicated smoke data root; reject smoke writes to production paths. Version/preserve customer mapping when rerunning downstream jobs.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A04",
+      "priority": "P1",
+      "kind": "mock_and_upstream_source",
+      "title": "Detector interprets COCO class IDs as fashion12 labels",
+      "locations": [
+        "src/cv/detector.py:20-31",
+        "src/cv/detector.py:46-60",
+        "configs/model_config.yaml:39-42"
+      ],
+      "evidence": "Default yolo11m.pt is COCO80. Mock outputs with class 0 person and 26 handbag are interpreted as top and other. Constructor device is not passed to predict.",
+      "recommendation": "Require checkpoint ontology metadata and verify model.names; use the correct YOLO-World class prompts or a verified fashion12 checkpoint, and pass device explicitly.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A05",
+      "priority": "P1",
+      "kind": "reproduced_cpu",
+      "title": "Empty-history UserTower output contains NaN",
+      "locations": [
+        "src/recsys/two_tower.py:112-124",
+        "tests/test_metrics_and_ids.py:165-190"
+      ],
+      "evidence": "With an all-True history mask, all 64 output dimensions are NaN. Multiplying masked attention outputs by zero does not remove NaN.",
+      "recommendation": "Handle empty history before attention; use an explicit cold-start user fallback and test mixed and entirely empty batches.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A06",
+      "priority": "P1",
+      "kind": "reproduced_direct_constructor",
+      "title": "Dataclass contracts do not enforce their declared types and identity constraints",
+      "locations": [
+        "src/contracts/schemas.py:34-56",
+        "src/contracts/schemas.py:75-78",
+        "tests/test_metrics_and_ids.py:132"
+      ],
+      "evidence": "Direct FashionEvent construction accepts invalid UUID/timestamps, customer_id x, event_type delete, source unknown, sales_channel_id 999 and NaN price. Qdrant payload permits product_code inconsistent with article prefix. FastAPI validation behavior was not tested.",
+      "recommendation": "Use consistent validated boundary schemas or explicit validation in every constructor; derive/check product prefix and require finite numeric values. Specify demo identities separately if supported.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A07",
+      "priority": "P1",
+      "kind": "source_verified_not_runtime",
+      "title": "Kafka log storage is outside the mounted volume",
+      "locations": [
+        "docker-compose.yml:36-53"
+      ],
+      "evidence": "KAFKA_LOG_DIRS is absent. Apache Kafka image 3.9.0 wrapper uses the provided environment to construct server.properties; default log.dir is /tmp/kafka-logs, while the bind mount is /var/lib/kafka/data. Container recreation persistence was not exercised.",
+      "recommendation": "Set KAFKA_LOG_DIRS=/var/lib/kafka/data and validate produce -> recreate -> consume with retained messages and metadata.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A08",
+      "priority": "P1",
+      "kind": "design",
+      "title": "Historical replay and UI event clocks share one watermark",
+      "locations": [
+        "docs/ARCHITECTURE.md:84-88",
+        "src/streaming/event_simulator.py:29-36",
+        "docs/DATA_CONTRACTS.md:150-162"
+      ],
+      "evidence": "Replay uses 2020 timestamps and UI uses current UTC time in the same fashion-events stream; a current event advances an event_time watermark beyond later historical records.",
+      "recommendation": "Separate replay/live topics, queries, checkpoints and Redis namespaces, or explicitly rebase the replay clock while preserving the historical date. Do not measure latency as now minus a historical event timestamp.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A09",
+      "priority": "P1",
+      "kind": "design",
+      "title": "Redis sessions have two writers and no retry deduplication contract",
+      "locations": [
+        "docs/ARCHITECTURE.md:89",
+        "docs/DATA_CONTRACTS.md:136-143",
+        "docs/DATA_CONTRACTS.md:179"
+      ],
+      "evidence": "API and Spark are both specified to update recent history. Redis pipeline is not deduplication, and foreachBatch is at-least-once. Window identity, snapshot replacement and expired-item removal are undefined for trend:15m.",
+      "recommendation": "Choose a single session writer or shared atomic event_id dedup. Specify idempotent window snapshots, checkpoint/run identity, retry and partial-failure tests.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A10",
+      "priority": "P1",
+      "kind": "evaluation_design",
+      "title": "Model-selection data is not separated from final reporting",
+      "locations": [
+        "docs/MASTER_PLAN.md:71",
+        "docs/MASTER_PLAN.md:118",
+        "docs/ARCHITECTURE.md:99",
+        "docs/DATA_CONTRACTS.md:69"
+      ],
+      "evidence": "Week104 is used for gates and early stopping without a separate final holdout. CV benchmark is Val in MASTER_PLAN but Test in ARCHITECTURE; Fashionpedia and VN development/final policies are not frozen.",
+      "recommendation": "Proposed, not adopted: keep Sep16..22 as untouched final, use an earlier week for dev and earlier weeks for train. Split Fashionpedia train/dev and VN queries by original image/person/outfit. Apply cutoff-specific candidates, models and features to each week.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A11",
+      "priority": "P1",
+      "kind": "evaluation_design",
+      "title": "CV relevance and pooled-metric protocol is incomplete",
+      "locations": [
+        "docs/MASTER_PLAN.md:71",
+        "docs/MASTER_PLAN.md:99-100",
+        "configs/class_mapping.yaml:1-2",
+        "src/metrics/cv_metrics.py:22-40"
+      ],
+      "evidence": "Same taxonomy is proposed for class filtering and CatConsistency, risking a tautological score. Gallery/qrels/self-match policy and GT-crop versus predicted-crop reporting are absent. nDCG defaults to each returned list's own relevance pool.",
+      "recommendation": "Freeze gallery/query/qrels, exclude I2I self-match, measure unfiltered class consistency, separate oracle-crop diagnostics from detector end-to-end results, and use a shared blinded union label pool with a common IDCG.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A12",
+      "priority": "P1",
+      "kind": "specification_drift",
+      "title": "Canonical plan, architecture and contracts disagree on integration interfaces",
+      "locations": [
+        "docs/MASTER_PLAN.md:53",
+        "docs/MASTER_PLAN.md:114",
+        "docs/MASTER_PLAN.md:135",
+        "docs/MASTER_PLAN.md:145",
+        "docs/MASTER_PLAN.md:165",
+        "docs/DATA_CONTRACTS.md:54-66",
+        "docs/DATA_CONTRACTS.md:97-179",
+        "configs/model_config.yaml:18-21"
+      ],
+      "evidence": "Conflicting Silver partitions, feature-table paths, Qdrant collection/named-vector design, 5m versus 15m/1m windows, Redis customer_idx versus customer_id keys/TTLs, outfit method/path and third encoder identity.",
+      "recommendation": "Make DATA_CONTRACTS and validated schemas authoritative; align plan/config/prompts. Include primary keys, cutoff, model/snapshot versions, article/categorical index vocabularies, padding/OOV semantics and ownership.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A13",
+      "priority": "P2",
+      "kind": "unverified_claims_and_resource_design",
+      "title": "Resource claims are presented as measurements and FP16 policy conflicts with CPU serving",
+      "locations": [
+        "docs/INFRA_AND_COLAB_GUIDE.md:11-32",
+        "docs/INFRA_AND_COLAB_GUIDE.md:41-71",
+        "docs/INFRA_AND_COLAB_GUIDE.md:94",
+        "AGENTS.md:54",
+        "src/recsys/features_gpu.py:45-78",
+        "requirements.txt:35"
+      ],
+      "evidence": "Docs call VRAM/latency estimates actual and promise 100% fit, despite no measured artifacts. GPU features use FP32, not the documented FP16. NumPy fallback gathers all candidate vectors without batching; one 7M x 768 FP32 tensor is 21.504 GB before temporaries. CPU FP16 is not generally supported by ORT; requirements chooses CPU ORT while cv extra chooses GPU ORT. Colab SSH/resource statements are overbroad.",
+      "recommendation": "Label budgets as estimates and measured results TBD; benchmark peak process memory and concurrency; chunk both GPU and NumPy paths. Define per-model provider/dtype and export parity; use CPU FP32/validated INT8 as appropriate. Follow current Colab FAQ and record actual CU consumption.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A14",
+      "priority": "P2",
+      "kind": "reproduced_discovery_and_environment",
+      "title": "Quickstart and packaging do not produce a reproducible installed project",
+      "locations": [
+        "README.md:91-99",
+        "pyproject.toml:1-51",
+        "src/utils/config.py:10-19",
+        "requirements.txt:29-36"
+      ],
+      "evidence": "README creates a venv then tests without dependency installation. Environment lacks key runtime libraries and pytest. Setuptools auto-discovery produces packages backend/contracts/cv/... under package_dir src, while imports use src.*; spark_jobs and external configs are omitted. Wheel import behavior not tested.",
+      "recommendation": "Choose one documented installation path, explicitly configure package/data discovery, lock a smoke-tested environment while preserving global torch/CUDA, and verify imports/config resolution from outside the checkout.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A15",
+      "priority": "P2",
+      "kind": "reproduced_synthetic_and_source",
+      "title": "White borders do not establish aspect-ratio correctness",
+      "locations": [
+        "scripts/check_hm256_aspect_ratio.py:21-28",
+        "scripts/check_hm256_aspect_ratio.py:53-65",
+        "scripts/resize_hm_aspect_pad.py:8-15",
+        "docs/MASTER_PLAN.md:43-45"
+      ],
+      "evidence": "A synthetically stretched white-background portrait still passes the white-border heuristic. USE_DIRECTLY is too strong. Resize helper has no CLI, so executing its file does no processing; padding an already stretched image cannot reconstruct the original ratio.",
+      "recommendation": "Report heuristic/inconclusive status; compare matching original images and record source metadata. Add explicit batch input/output CLI using original aspect ratios. Result artifacts need seed and timestamp.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A16",
+      "priority": "P2",
+      "kind": "source_inspection",
+      "title": "Existing Qdrant collections are accepted without embedding compatibility checks",
+      "locations": [
+        "src/cv/qdrant_indexer.py:34-45"
+      ],
+      "evidence": "ensure_collection returns whenever the name exists, without checking dimensions, distance or encoder revision. Switching 768D SigLIP to 512D CLIP fails later; different same-dimension models can silently mix incompatible spaces.",
+      "recommendation": "Version collections by encoder/preprocessing fingerprint, validate schema and swap an alias after indexing/evaluation.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A17",
+      "priority": "P2",
+      "kind": "source_and_official_preprocessing",
+      "title": "SigLIP text padding overrides pretrained preprocessing",
+      "locations": [
+        "src/cv/embedder.py:85-87",
+        "configs/model_config.yaml:12-17"
+      ],
+      "evidence": "padding=True pads to the batch maximum instead of pretrained padding=max_length/max_length=64. Retrieval regression was not measured because Transformers/model is unavailable.",
+      "recommendation": "Use model-specific processor settings and pin tested versions; test a query alone and in a mixed-length batch before benchmarking.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A18",
+      "priority": "P2",
+      "kind": "reproduced_utility",
+      "title": "Candidate Recall consumes iterator ground truth twice",
+      "locations": [
+        "src/metrics/recsys_metrics.py:74-85"
+      ],
+      "evidence": "Same ground truth gives 1.0 as a list and 0.0 as iter(['A']), although Iterable is accepted by the signature.",
+      "recommendation": "Materialize each ground-truth set once or explicitly restrict the input contract to reusable collections.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A19",
+      "priority": "P2",
+      "kind": "source_and_small_cpu_probe",
+      "title": "Two-Tower ablations, cold-start and feature parity claims exceed implementation",
+      "locations": [
+        "src/recsys/two_tower.py:7-10",
+        "src/recsys/two_tower.py:38-53",
+        "src/recsys/two_tower.py:112-120",
+        "docs/MASTER_PLAN.md:128-130",
+        "docs/ARCHITECTURE.md:121-129"
+      ],
+      "evidence": "Implemented ablations are ID-only/ID+metadata/ID+metadata+visual, not the planned time-decay variant. History permutation changes eval vectors only at floating-point noise because no position/time input exists. All item modes require an ID embedding; no explicit OOV/content-only path. Reusing one LightGBM file does not guarantee parity between purchase-derived offline features and online click/session features.",
+      "recommendation": "Align ablations before training; define ID masking/content-only and empty-history fallbacks, cutoff-based cold-start cohorts, and shared feature semantics with offline/online parity fixtures.",
+      "status": "OPEN"
+    },
+    {
+      "id": "A20",
+      "priority": "P2",
+      "kind": "scaffold_status_and_scope",
+      "title": "Status language overstates completeness and milestones defer integration too long",
+      "locations": [
+        "docs/HANDOFF.md:35-36",
+        "docs/MASTER_PLAN.md:1-3",
+        "docs/MASTER_PLAN.md:16-19",
+        "docs/MASTER_PLAN.md:159-179",
+        "src/backend/main.py:29-90",
+        "spark_jobs/streaming/s1_stream_processor.py:8-24"
+      ],
+      "evidence": "API endpoints return empty results/accepted without real business operations, health does not check dependencies, and the stream job only declares a schema. These are planned but unimplemented work, not individual defects. Yet docs say production-ready/complete, baseline end-to-end is promised in week1 while serving is assigned week6, and all TBD must be replaced even for optional skipped branches.",
+      "recommendation": "Describe current scaffold truthfully; separate liveness/readiness and return explicit unavailable/not-implemented responses until wired. Deliver a small vertical slice early; choose one advanced branch and allow NOT_RUN/SKIPPED with reasons. Specify quantitative gate acceptance separately from experiment-entry criteria.",
+      "status": "OPEN"
+    }
+  ],
+  "additional_metric_caveats": [
+    {
+      "location": "src/metrics/cv_metrics.py:77-78",
+      "evidence": "Single-category annotator ratings return kappa=1 although expected-agreement denominator is zero.",
+      "recommendation": "Report undefined/NaN plus observed agreement and label distribution."
+    },
+    {
+      "location": "src/metrics/cv_metrics.py:35-40",
+      "evidence": "ndcg([1])=1.0 with default self-pool; shared pool [3,3,3,1] gives 0.06515852978097801.",
+      "recommendation": "Require the common pool for cross-model VN comparisons."
+    }
+  ],
+  "recommended_order": [
+    "Fix A01-A07 and add regression coverage before data/model runs.",
+    "Freeze A10-A12 evaluation and integration contracts before delegating implementation.",
+    "Resolve A08-A09 streaming semantics and validate restart/retry behavior.",
+    "Repair A14 setup and deliver an early baseline vertical slice.",
+    "Benchmark resource limits on a small sample, then full data; choose one advanced research branch."
+  ],
+  "external_sources": {
+    "spark": "https://spark.apache.org/docs/3.5.6/structured-streaming-programming-guide.html",
+    "lightgbm": "https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.Dataset.html",
+    "kafka_wrapper": "https://raw.githubusercontent.com/apache/kafka/3.9.0/core/src/main/scala/kafka/docker/KafkaDockerWrapper.scala",
+    "kafka_defaults": "https://raw.githubusercontent.com/apache/kafka/3.9.0/docker/resources/common-scripts/configureDefaults",
+    "kafka_log_default": "https://raw.githubusercontent.com/apache/kafka/3.9.0/server-common/src/main/java/org/apache/kafka/server/config/ServerLogConfigs.java",
+    "kafka_dockerfile": "https://raw.githubusercontent.com/apache/kafka/3.9.0/docker/jvm/Dockerfile",
+    "ultralytics": "https://docs.ultralytics.com/models/yolo11/",
+    "siglip2": "https://huggingface.co/docs/transformers/model_doc/siglip2",
+    "onnxruntime": "https://onnxruntime.ai/docs/performance/model-optimizations/float16.html",
+    "colab": "https://research.google.com/colaboratory/faq.html",
+    "setuptools": "https://setuptools.pypa.io/en/stable/userguide/package_discovery.html"
+  },
+  "environment_versions": {
+    "numpy": "2.2.6",
+    "pandas": "3.0.5",
+    "torch": "2.5.1+cu121",
+    "torchvision": "0.20.1+cu121",
+    "pydantic": null,
+    "fastapi": null,
+    "pytest": null,
+    "pyspark": null,
+    "delta-spark": null,
+    "lightgbm": null,
+    "transformers": null,
+    "qdrant-client": null,
+    "onnxruntime": null,
+    "onnxruntime-gpu": null,
+    "setuptools": "82.0.1",
+    "PyYAML": "6.0.3"
+  },
+  "probes": {
+    "week_boundaries": {
+      "2020-09-15": 103,
+      "2020-09-16": 103,
+      "2020-09-17": 104,
+      "2020-09-22": 104
+    },
+    "ranker_mock": {
+      "captured": [
+        {
+          "rows": 4,
+          "group_sizes": [
+            4
+          ]
+        },
+        {
+          "rows": 4,
+          "group_sizes": [
+            4
+          ]
+        }
+      ],
+      "expected_group_sizes": [
+        2,
+        2
+      ],
+      "uses_real_lightgbm": false
+    },
+    "two_tower_cpu": {
+      "empty_history_nan_dimensions": 64,
+      "history_permutation_max_abs_difference": 4.470348358154297e-08
+    },
+    "invalid_direct_event": {
+      "constructor_accepted": true,
+      "event_id": "not-a-uuid",
+      "event_time": "yesterday",
+      "customer_id": "x",
+      "event_type": "delete",
+      "source": "unknown",
+      "sales_channel_id": 999,
+      "price_is_nan": true
+    },
+    "inconsistent_product_prefix": {
+      "accepted_article_id": "0108775015",
+      "accepted_product_code": "9999999",
+      "expected_prefix": "0108775"
+    },
+    "candidate_recall": {
+      "list": 1.0,
+      "iterator": 0.0
+    },
+    "metric_caveats": {
+      "ndcg_own_pool": 1.0,
+      "ndcg_shared_pool": 0.06515852978097801,
+      "kappa_single_category": 1.0
+    },
+    "aspect_heuristic": {
+      "original_size": [
+        100,
+        200
+      ],
+      "stretched_size": [
+        256,
+        256
+      ],
+      "incorrectly_passes_padding_check": true
+    },
+    "detector_mock": {
+      "weights_default": "yolo11m.pt",
+      "input_class_names": [
+        "person",
+        "handbag"
+      ],
+      "output_classes": [
+        "top",
+        "other"
+      ],
+      "device_forwarded_to_predict": false,
+      "real_model_loaded": false
+    },
+    "setuptools_discovery": {
+      "package_dir": {
+        "": "src"
+      },
+      "packages": [
+        "backend",
+        "contracts",
+        "cv",
+        "frontend",
+        "metrics",
+        "recsys",
+        "streaming",
+        "utils"
+      ],
+      "wheel_built": false
+    },
+    "memory_arithmetic_not_measurement": {
+      "one_7m_x_768_fp32_tensor_bytes": 21504000000,
+      "catalog_105542_x_768_fp32_bytes": 324225024
+    }
+  },
+  "probe_status": "Confirmed current behavior; these are defect reproductions, not regression tests passing corrected behavior.",
+  "timestamp": "2026-10-17T20:37:58+07:00",
+  "reviewed_source_sha256": {
+    "AGENTS.md": "4e8113e30b92c4c192bd088c62cab0bff196ea8631733c4558678333aae17800",
+    "configs/class_mapping.yaml": "d0c780e1e0d8d2ff9177c582745b5df1c5aa84e5c34399b49263253273e83314",
+    "configs/model_config.yaml": "7d98c3fc48e3f95f36ad664e54ee6c52d32ee2684e601b36a31bcfe2324fb078",
+    "configs/paths.yaml": "89e01765b7d76445fa7ca4fc6d5cd1f2ab74529285463dd22b251e7852849928",
+    "configs/spark_config.yaml": "b2fe2d1473da7143de15b43104788b6d0a9ae1dc480df2ea0d7ebb3fd2d1812b",
+    "docker-compose.yml": "1f00ee5ff94a1d4df23b8136fe903326c023546903e65f255d416369700bec6a",
+    "docs/ARCHITECTURE.md": "068c5a90ffb571c862493094336efc1ff90063c2fb739aa0edd21b78345cf5ad",
+    "docs/DATA_CONTRACTS.md": "de4c450175bf72341d954db72865036d5efd5da969f97ec89c25bf33911dad91",
+    "docs/HANDOFF.md": "40d797132e652faf23dd8b03d3d8763093a582b7d905808695c19f7b5f27001f",
+    "docs/INFRA_AND_COLAB_GUIDE.md": "b49724d5f6744e504a41c62259c596c0a097b5877ce3909889721b364655c120",
+    "docs/MASTER_PLAN.md": "8e6eeadd3ea781db70aa3536856d6371c7178bdcaeb074c2db9bb7f4211db2de",
+    "docs/STATE.md": "85251c8543eb1098702505b0df5aa5c3270b3ebb279ae3f65c25c822f387acc2",
+    "docs/SUBAGENT_PROMPTS.md": "cd9089bb93ac987024da0546dfdb4c9ee021849e81198a24f4f45cd1682af032",
+    "pyproject.toml": "39c50630fcac2e82f4f27aafa97e6699dca2618b9fdb3afb16afe293abd102d4",
+    "README.md": "658697afdc73fd06407506192de4dc6da551178f9f432648e88bb03b0619011d",
+    "requirements-colab.txt": "1c17e7db2aeee509b07bd087f88a7e3514228c336c39387f2543aba45609d124",
+    "requirements.txt": "68104402f0c075822660b1b9b8b55e0b7867452a9a01d28ef0064cbebfabf632",
+    "scripts/check_hm256_aspect_ratio.py": "a2902ce9d96f54c4df0562d95fdbf6a85de975007679cf9ff1bbabadacc42023",
+    "scripts/resize_hm_aspect_pad.py": "dd3f15a6f5b49cb381f57865465eca72810ace3695cde49d46731f8eba5f5a0d",
+    "spark_jobs/__init__.py": "b337f603fb6d33151652ab548a2b5e10f0bd667ba23739400b7494a65e28db12",
+    "spark_jobs/batch/__init__.py": "ee8106de6b3c95fdd48f005fe6360f6832412286737c2954409bfb6f9d299c2e",
+    "spark_jobs/batch/b0_ingest_bronze.py": "a7f8953520b16cec36e99cdb2365b96390a290b14313c18521eb867e7d6cb81a",
+    "spark_jobs/batch/b1_clean_silver.py": "d258843f976cb76ea4f6b9e1c53fb46b2a8abb0109400d0ed23f9e8c4a102f4d",
+    "spark_jobs/spark_session.py": "8fe904bf827dab78be9b71a0a7586dfb7304cec6ce1a3f2e24953e6f5b994199",
+    "spark_jobs/streaming/__init__.py": "7c9d0b30c42f269faff10c1430981c8c4fb10f501996382137f346acc4cf7c5a",
+    "spark_jobs/streaming/s1_stream_processor.py": "e57332a04ca9d2761a86916f3ea0f99070c9f0dc88a168d988c17c31c94e434a",
+    "src/__init__.py": "c4aba9cd5616335dd1ed406ab11176594eb11292f2eb9dcea2abe53784dd324c",
+    "src/backend/__init__.py": "018c32d180583e427c0e409eca38e7e22e3cd8ae30b166c3a76830cf0600260c",
+    "src/backend/main.py": "98d709d8bb3f4b76c9a5c9d96d7f29d99c97c530b51be2ad369ad5832f57836a",
+    "src/contracts/__init__.py": "15e5e948b1896509226c311f6440e37a9fc38736cc20d067513a6fd15022f8d0",
+    "src/contracts/schemas.py": "e4d94af8c939c1abfe878adb1c4d8fd9ad5f77064c150517027ca2b2bab2ae99",
+    "src/cv/__init__.py": "eb7beebd809a75d3440066cf7920e5d7e48c3bfaf4724205ae2c5fb86693d805",
+    "src/cv/detector.py": "f89da2f8f7f3b68111990e0ab260170f898dbc265fede28556c9e20a8bb003b8",
+    "src/cv/embedder.py": "fe7510591bd1b5afbe9c9d36a0b29b8c1cdb56aeca95eb258c8d6b33ded6f435",
+    "src/cv/export_onnx.py": "3d180585cffb76de36356f1ba1a5dc05a660b725866ac5071ad91d9f6e3b5d74",
+    "src/cv/qdrant_indexer.py": "0d7c98ac7dfbf87a38deae66f4f8ca69b0c3baf629527527b24387576c815c1d",
+    "src/frontend/__init__.py": "67108f19a20949182c4732899b17ff8e712d9f4e5e96ac5c2f8668b2368fd1d3",
+    "src/frontend/app.py": "725651ea009725f0326b5e0f65f121ff33cb94bdff9c70d946174d14ef04747e",
+    "src/metrics/__init__.py": "4f9cc141669273d0ba6f3b19e060febec2835283344abb46b9475a28fe0d7f95",
+    "src/metrics/cv_metrics.py": "3055dd0507d2ba494a8a075d7b222c7accfc8608dc8b0f1510a403c8e7ba7028",
+    "src/metrics/recsys_metrics.py": "ae81742151c1db9f23b785d8432857ada646c088a6b419abdbc9b8d74ca3a5cf",
+    "src/recsys/__init__.py": "7991e25ec0e36d940c67149b644fcaf7ad2e4720ca935f662bdabfb215a32273",
+    "src/recsys/baselines.py": "b41ee5ca3d1c2e5c0c948103de55f17f4f58f6365693abf645dbfdbbdec1cad4",
+    "src/recsys/features_gpu.py": "a786506065316ebc138ab9740c8a195ef20acf4524ce6631f9371fc5905927ce",
+    "src/recsys/lgbm_ranker.py": "618ba307dc74cd691f580748b9401e3bee76b60d3dacfe0d6dca831aa42c0279",
+    "src/recsys/two_tower.py": "21bf58f6e180a438105c3adfa2cc93bb52ade1cdff168265a3c9e2c940c16bde",
+    "src/streaming/__init__.py": "9907d30eb708d013ad827f827b5c401775284b90a490855f140e031629984dcd",
+    "src/streaming/event_simulator.py": "fa831c678debcdc2bd391d2d75dec516990f05199b17c3366e1770f927a41496",
+    "src/utils/__init__.py": "ac8e795bae2a15ad01005b0aad2a79a3cb8f9787dba04467aa6654e42844cfce",
+    "src/utils/config.py": "33e0ee7dddbb86e4415d9839b175fe68e2ff47338618a3b085fc296024531ea8",
+    "src/utils/id_utils.py": "8724089ce4d121692e3bb430722b6bb852d29fe5743bc7bce3addba7b55168f3",
+    "src/utils/seed.py": "eeb7a3287606ff0f3d7b42ed85ad482b8e9aefdde4b1e6aeb98a758713e6f92e",
+    "tests/test_markdown_links.py": "972f99de9095bc9cdf166dbaa284beb361ddf6186f62c66cb41afd8c503452d8",
+    "tests/test_metrics_and_ids.py": "13dffcdd7a36d6de37a03062608808c2f9a5036214c23d5628f71589395ab8d2"
+  },
+  "reviewed_source_sha256_note": "Hashes identify the review input snapshot before adding the audit journal to STATE/HANDOFF; implementation files were not modified."
+}

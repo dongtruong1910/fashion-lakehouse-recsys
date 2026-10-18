@@ -214,3 +214,4 @@ flowchart TD
 | **Tuần 4** | LightGBM LambdaRank, Two-Tower L4, Đánh giá 3 Tầng | LightGBM hoàn thiện, Two-Tower Ablation, `CatConsistency@10` |
 | **Tuần 5** | Spark Structured Streaming, Kafka, Thí nghiệm Spark | Streaming $\rightarrow$ Redis, 4 Thí nghiệm tối ưu phân tán |
 | **Tuần 6** | Tích hợp FastAPI Serving, Giao diện Streamlit, Báo cáo | Serving < 150ms, App 4 Tabs, Hoàn thiện báo cáo 2 môn |
+

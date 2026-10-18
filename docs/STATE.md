@@ -1,6 +1,6 @@
 # TRẠNG THÁI DỰ ÁN TRỰC TIẾP (LIVE PROJECT STATE — SINGLE SOURCE OF TRUTH)
 
-> **Cập nhật lần cuối:** `2026-10-17T08:30:00+07:00`  
+> **Cập nhật lần cuối:** `2026-10-17T21:59:04+07:00`
 > **Người cập nhật:** Lead Architect Agent  
 > **Giai đoạn hiện tại:** `WP-0` — Khởi tạo Hạ tầng, Codebase & Kiểm định Dữ liệu.
 
@@ -10,7 +10,7 @@
 
 | Work Package | Mã Task | Mô tả ngắn | Phụ trách | Trạng thái | Ghi chú / Đầu ra đã kiểm chứng |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| **WP-0** | `TASK-00` | Khởi tạo toàn bộ Codebase, Docs, Configs, Contracts & Unit Tests | Lead Agent | ✅ **DONE** | Đã tạo cấu trúc chuẩn + pass `pytest tests/` |
+| **WP-0** | `TASK-00` | Khởi tạo toàn bộ Codebase, Docs, Configs, Contracts & Unit Tests | Lead Agent | ✅ **DONE** | Đã tạo scaffold; 6 unittest + kiểm tra links pass. Audit §4 còn lỗi nền tảng; `pytest` chưa có trong môi trường. |
 | **WP-0** | `TASK-01` | Dựng Docker Compose (Qdrant, Redis, Kafka KRaft Dual-Listener) | Data / Serving Agent | ⏳ **READY** | File `docker-compose.yml` đã sẵn sàng chạy |
 | **WP-0** | `TASK-02` | Tải Dataset (H&M + Fashionpedia) & Kiểm tra tỉ lệ ảnh 256 | Data / CV Agent | ⏳ **READY** | Script `scripts/check_hm256_aspect_ratio.py` đã sẵn sàng |
 | **WP-1** | `TASK-BD-01` | Ingest CSV $\rightarrow$ Bronze $\rightarrow$ Silver Delta Lake + Benchmark lưu trữ | Data Sub-Agent | ⬜ **PENDING** | Phụ thuộc `TASK-02` |
@@ -62,3 +62,16 @@
   * `L3 (LightGBM LambdaRank + GPU Visual Feature)`: `[TBD]`
   * `L4 (Hybrid LightGBM + Two-Tower Neural Retrieval)`: `[TBD]`
 * **Streaming Throughput & Latency (p50 / p95):** `[TBD]`
+
+---
+
+## 4. Rà soát code và tài liệu ngày 2026-10-17
+
+- **Kết luận:** Repo hiện là scaffold có một số utilities/model wrappers đã viết; chưa có hệ thống end-to-end được kiểm chứng. Nhãn `TASK-00 DONE` chỉ phản ánh việc tạo khung, không xác nhận các module đã đúng hoặc production-ready.
+- **Bằng chứng audit:** [codebase_review_2026-10-17.json](../reports/tables/codebase_review_2026-10-17.json) gồm 20 findings, vị trí mã nguồn, mức ưu tiên, loại bằng chứng, phiên bản môi trường, seed `42`, timestamp và probe kết quả. Xem mục bàn giao `REVIEW-2026-10-17` trong [HANDOFF.md](HANDOFF.md).
+- **Bản nhận xét đầy đủ theo yêu cầu người dùng:** [nhan_xet_codebase_va_docs_v3_2026-10-17.md](ke_hoach_ban_dau/nhan_xet_codebase_va_docs_v3_2026-10-17.md); gồm 20 findings, nhận định bổ sung và lộ trình đề xuất. Đây là hồ sơ review, chưa thay thế đặc tả hiện hành.
+- **Đã kiểm tra:** 6/6 `unittest` pass; script kiểm liên kết Markdown pass; cú pháp 37 file Python pass; `docker compose config --quiet` exit 0. `pytest` chưa chạy được vì môi trường hiện tại thiếu package.
+- **Lỗi nền tảng còn mở:** lịch tuần đưa `2020-09-16` vào tuần 103; LambdaRank chỉ group theo khách nên trộn nhiều tuần; smoke B0 overwrite Bronze chính; detector COCO bị diễn giải bằng nhãn fashion12; UserTower history rỗng trả NaN; contracts dataclass không validate đầy đủ; Kafka chưa đặt log directory trùng volume.
+- **Thiết kế cần chốt trước triển khai tiếp:** dev/final holdout; protocol CV/qrels/shared IDCG; thống nhất bảng/key/API giữa MASTER_PLAN và DATA_CONTRACTS; tách clock replay/UI; một writer hoặc dedup nguyên tử cho Redis session và retry-safe sink.
+- **Chưa kiểm chứng:** Không có dataset raw, model checkpoint hay bảng benchmark ML trong checkout; chưa khởi động Docker, chạy Spark, train model hoặc kiểm FastAPI/Qdrant/Redis/Kafka end-to-end. Compose parse được không chứng minh dịch vụ hoạt động hay dữ liệu tồn tại qua recreate.
+- **Thứ tự đề xuất:** sửa lỗi nền tảng + regression tests → khóa contracts/evaluation → hoàn thiện setup và vertical slice nhỏ → benchmark thật → chọn một nhánh nâng cao. Đây là đề xuất review, chưa thay đổi split hay phạm vi đã quy định trong AGENTS/MASTER_PLAN.
