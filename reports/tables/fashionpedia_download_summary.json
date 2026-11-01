@@ -1,0 +1,99 @@
+{
+  "timestamp_utc": "2026-10-30T14:46:38Z",
+  "dataset_dir": "data/raw/fashionpedia",
+  "total_files": 8,
+  "total_size_bytes": 3478843264,
+  "total_size_gb": 3.24,
+  "total_train_rows": 45623,
+  "total_val_rows": 1158,
+  "total_rows": 46781,
+  "schema_fields": [
+    "image_id",
+    "bytes",
+    "path",
+    "width",
+    "height",
+    "item",
+    "item",
+    "item",
+    "item"
+  ],
+  "sample_inspection": {
+    "inspected_file": "train-00000-of-00007-fe108070118553c3.parquet",
+    "column_names": [
+      "image_id",
+      "image",
+      "width",
+      "height",
+      "objects"
+    ],
+    "first_row_image_id": 23,
+    "objects_schema": "struct<bbox_id: list<item: int64>, category: list<item: int64>, bbox: list<item: fixed_size_list<item: double>[4]>, area: list<item: int64>>"
+  },
+  "files": [
+    {
+      "file_name": "train-00000-of-00007-fe108070118553c3.parquet",
+      "rel_path": "data/train-00000-of-00007-fe108070118553c3.parquet",
+      "size_bytes": 481667449,
+      "size_mb": 459.35,
+      "num_rows": 6518,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00001-of-00007-f41a5a9c38c9005b.parquet",
+      "rel_path": "data/train-00001-of-00007-f41a5a9c38c9005b.parquet",
+      "size_bytes": 480159159,
+      "size_mb": 457.92,
+      "num_rows": 6518,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00002-of-00007-40bc8456894bcbcd.parquet",
+      "rel_path": "data/train-00002-of-00007-40bc8456894bcbcd.parquet",
+      "size_bytes": 480166798,
+      "size_mb": 457.92,
+      "num_rows": 6518,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00003-of-00007-9a99ff8dc572e02c.parquet",
+      "rel_path": "data/train-00003-of-00007-9a99ff8dc572e02c.parquet",
+      "size_bytes": 489888780,
+      "size_mb": 467.19,
+      "num_rows": 6518,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00004-of-00007-f4e6f12cd2cedfea.parquet",
+      "rel_path": "data/train-00004-of-00007-f4e6f12cd2cedfea.parquet",
+      "size_bytes": 487726084,
+      "size_mb": 465.13,
+      "num_rows": 6517,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00005-of-00007-41d8dfe1edb6591e.parquet",
+      "rel_path": "data/train-00005-of-00007-41d8dfe1edb6591e.parquet",
+      "size_bytes": 487389925,
+      "size_mb": 464.81,
+      "num_rows": 6517,
+      "num_columns": 9
+    },
+    {
+      "file_name": "train-00006-of-00007-f41b0f2f4bbefac9.parquet",
+      "rel_path": "data/train-00006-of-00007-f41b0f2f4bbefac9.parquet",
+      "size_bytes": 486997231,
+      "size_mb": 464.44,
+      "num_rows": 6517,
+      "num_columns": 9
+    },
+    {
+      "file_name": "val-00000-of-00001-0b29e85429788213.parquet",
+      "rel_path": "data/val-00000-of-00001-0b29e85429788213.parquet",
+      "size_bytes": 84847838,
+      "size_mb": 80.92,
+      "num_rows": 1158,
+      "num_columns": 9
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "status": "ok",
+  "verification_mode": "white_border_heuristic_only",
+  "timestamp_utc": "2026-10-22T04:01:53Z",
+  "seed": 42,
+  "image_dir": "data\\raw\\hm\\images",
+  "total_images": 105099,
+  "sampled_images": 500,
+  "sampled_article_ids": [
+    "0814966003",
+    "0564312024",
+    "0453026001",
+    "0875095004",
+    "0650799002",
+    "0635240009",
+    "0625876001",
+    "0579368001",
+    "0872393001",
+    "0558996011",
+    "0836284003",
+    "0874754002",
+    "0765996001",
+    "0548127005",
+    "0791488026",
+    "0711407001",
+    "0479227010",
+    "0470985009",
+    "0553392001",
+    "0624543026"
+  ],
+  "resolutions": {
+    "256x256": 500
+  },
+  "white_border_heuristic_ratio": 0.12,
+  "recommendation": "WARNING_UNPADDED_SQUARE_DETECTED_CONSIDER_LETTERBOX_RESIZE_FROM_ORIGINALS"
+}

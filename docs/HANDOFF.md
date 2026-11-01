@@ -27,6 +27,29 @@ Khi kết thúc nhiệm vụ, hãy sao chép mẫu sau và điền đầy đủ 
 
 ## 2. Nhật ký Bàn giao (Mới nhất ở trên)
 
+### [2026-10-30 21:46] — Computer Vision & Data Engineer Agent bàn giao `TASK-02-FASHIONPEDIA` (Hoàn Tất Tải & Kiểm Định Dataset Fashionpedia)
+- **Trạng thái Task:** `DONE` (Fashionpedia ingestion hoàn tất 100%, sẵn sàng cho `TASK-CV-04A`).
+- **Tóm tắt công việc đã làm:**
+  1. Hoàn tất việc tải toàn bộ dataset Fashionpedia (~3.24 GB, 8 shards Parquet) từ Hugging Face vào [`data/raw/fashionpedia/`](../data/raw/fashionpedia/) bằng script [`scripts/download_fashionpedia.py`](../scripts/download_fashionpedia.py).
+  2. Kiểm chứng thành công cơ chế **Resumable Download** (nối tiếp chính xác byte đã tải dở sau khi mạng ổn định lại mà không bị mất dữ liệu hay tải trùng lặp).
+  3. Kiểm định toàn vẹn dữ liệu qua PyArrow, xác nhận đầy đủ metadata, schema và số lượng bản ghi: 45.623 ảnh Train, 1.158 ảnh Validation (tổng cộng 46.781 ảnh, khớp 100% tài liệu gốc).
+  4. Cập nhật nhật ký công việc chi tiết tại [`work_log/29_10_2026.md`](../work_log/29_10_2026.md) và báo cáo kiểm định tại [`reports/tables/fashionpedia_download_summary.json`](../reports/tables/fashionpedia_download_summary.json).
+- **Các file đã tạo mới hoặc chỉnh sửa:**
+  - `scripts/download_fashionpedia.py`
+  - `reports/tables/fashionpedia_download_summary.json`
+  - `work_log/29_10_2026.md`
+  - `docs/HANDOFF.md`
+  - `docs/STATE.md`
+- **Kết quả kiểm thử / Số liệu thực nghiệm (Verification & Metrics):**
+  - Đã tải: 8 files Parquet (7 train + 1 val) + `README.md` + `dataset_infos.json`.
+  - Kích thước: 3.478.843.264 bytes (3.24 GB).
+  - Train rows: 45.623, Val rows: 1.158, Total rows: 46.781.
+  - Schema: `["image_id", "image", "width", "height", "objects"]` (`objects` struct gồm `bbox_id`, `category`, `bbox`, `area`).
+  - `tests/test_markdown_links.py`: PASS 100%.
+- **Vấn đề tồn đọng / Lưu ý cho Agent tiếp theo (Next Steps):**
+  - Dataset Fashionpedia đã sẵn sàng để triển khai `TASK-CV-04A` (chuyển đổi 46 lớp về 12 lớp detector theo `configs/class_mapping.yaml`).
+  - Đối với `TASK-02`: Tiếp tục bổ sung bộ dữ liệu H&M (CSV + images) vào `data/raw/hm/` và chạy `scripts/check_hm256_aspect_ratio.py`.
+
 ### [2026-10-18 13:00] — Lead Architect Agent bàn giao `TASK-00-FIX` (Khắc phục toàn bộ 20 Findings `A01`–`A20` & Đồng bộ hóa v3.1)
 - **Trạng thái Task:** `DONE`
 - **Tóm tắt công việc đã làm:**

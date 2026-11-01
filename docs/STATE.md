@@ -1,8 +1,8 @@
 # TRẠNG THÁI DỰ ÁN TRỰC TIẾP (LIVE PROJECT STATE — SINGLE SOURCE OF TRUTH)
 
-> **Cập nhật lần cuối:** `2026-10-18T13:00:00+07:00`
+> **Cập nhật lần cuối:** `2026-10-30T21:55:00+07:00`
 > **Người cập nhật:** Lead Architect Agent  
-> **Giai đoạn hiện tại:** `WP-0` — Khởi tạo Hạ tầng, Codebase & Kiểm định Dữ liệu (`TASK-00` & `TASK-00-FIX` đã hoàn tất).
+> **Giai đoạn hiện tại:** `WP-0` — Khởi tạo Hạ tầng, Codebase & Kiểm định Dữ liệu (`TASK-00`, `TASK-00-FIX` & `TASK-02` đã hoàn tất; `TASK-01` sẵn sàng).
 
 ---
 
@@ -13,8 +13,8 @@
 | **WP-0** | `TASK-00` | Khởi tạo toàn bộ Codebase, Docs, Configs, Contracts & Unit Tests | Lead Agent | ✅ **DONE** | Đã tạo scaffold v3 ban đầu |
 | **WP-0** | `TASK-00-FIX` | Khắc phục toàn bộ 20 findings (`A01`–`A20`) & đồng bộ Docs/Contracts v3.1 | Lead Agent | ✅ **DONE** | 14/14 unittest + regression + markdown links pass ([`codebase_fixes_v3_1_2026-10-18.json`](../reports/tables/codebase_fixes_v3_1_2026-10-18.json)) |
 | **WP-0** | `TASK-01` | Dựng Docker Compose (Qdrant, Redis, Kafka KRaft Dual-Listener) | Data / Serving Agent | ⏳ **READY** | File [`docker-compose.yml`](../docker-compose.yml) đã cấu hình `KAFKA_LOG_DIRS` |
-| **WP-0** | `TASK-02` | Tải Dataset (H&M + Fashionpedia) & Kiểm tra tỉ lệ ảnh 256 | Data / CV Agent | ⏳ **READY** | Script [`scripts/check_hm256_aspect_ratio.py`](../scripts/check_hm256_aspect_ratio.py) đã sẵn sàng |
-| **WP-1** | `TASK-BD-01` | Ingest CSV $\rightarrow$ Bronze $\rightarrow$ Silver Delta Lake + Benchmark lưu trữ | Data Sub-Agent | ⬜ **PENDING** | Phụ thuộc `TASK-02` |
+| **WP-0** | `TASK-02` | Tải Dataset (H&M + Fashionpedia) & Kiểm tra tỉ lệ ảnh 256 | Data / CV Agent | ✅ **DONE** | H&M: 105.099 ảnh 256x256, CSVs đầy đủ ([`hm256_aspect_check.json`](../reports/tables/hm256_aspect_check.json)); Fashionpedia: 46.781 ảnh 3.24GB ([`fashionpedia_download_summary.json`](../reports/tables/fashionpedia_download_summary.json)) |
+| **WP-1** | `TASK-BD-01` | Ingest CSV $\rightarrow$ Bronze $\rightarrow$ Silver Delta Lake + Benchmark lưu trữ | Data Sub-Agent | ⏳ **READY** | Dataset H&M CSVs sẵn sàng tại `data/raw/hm/` |
 | **WP-1** | `TASK-BD-02` | EDA Big Data (Long-tail, Repurchase rate, Cold-start stats) | Data Sub-Agent | ⬜ **PENDING** | Phụ thuộc `TASK-BD-01` |
 | **WP-1** | `TASK-REC-01` | Khung đánh giá RecSys (Dev Week 103 & Test Week 104) + Baselines **L0** & **L1** | RecSys Sub-Agent | ⬜ **PENDING** | Phụ thuộc `TASK-BD-01` |
 | **WP-1** | `TASK-CV-01` | Chia split H&M theo `product_code` (85/7.5/7.5) | CV Sub-Agent | ⬜ **PENDING** | Phụ thuộc `TASK-BD-01` |
@@ -52,7 +52,7 @@
 
 *(Chỉ điền số vào đây sau khi script thực nghiệm chạy xong và xuất file lưu trong `reports/tables/`)*
 
-* **Tỉ lệ ảnh H&M 256x256 (`hm256_aspect_check.json`):** `[TBD]`
+* **Tỉ lệ ảnh H&M 256x256 ([`hm256_aspect_check.json`](../reports/tables/hm256_aspect_check.json)):** 105.099 ảnh 256x256; `white_border_heuristic_ratio = 0.12` (12% viền trắng; cảnh báo ảnh unpadded square đã stretch)
 * **Benchmark Lưu trữ (`CSV` vs `Parquet` vs `Delta`):** `[TBD]`
 * **CV Zero-shot Best Model (`T2I R@10` / `I2I P@10-type+colour`):** `[TBD]`
 * **CV Detector (`Zero-shot mAP@50` vs `YOLO11m mAP@50`):** `[TBD]`

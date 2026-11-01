@@ -35,6 +35,7 @@ htmlcov/
 # Data, Volumes, Models & Checkpoints (Do NOT commit large files)
 data/raw/*
 data/lakehouse/*
+data/lakehouse_smoke/*
 data/splits/*
 !data/.gitkeep
 volumes/
@@ -50,6 +51,9 @@ metastore_db/
 spark-warehouse/
 derby.log
 *.crc
+
+# Work logs
+work_log/
 
 # Jupyter & IDEs
 .ipynb_checkpoints/
