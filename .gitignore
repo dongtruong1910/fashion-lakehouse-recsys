@@ -52,7 +52,8 @@ spark-warehouse/
 derby.log
 *.crc
 
-# Work logs
+# Documentation & Internal Notes
+docs/
 work_log/
 
 # Jupyter & IDEs
